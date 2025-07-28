@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MDify - RTL Editor</title>
+    <link rel="shortcut icon" href="img/MDify-icon.png" type="image/png">
+    <!-- Editor -->
+    <link rel="stylesheet" href="libs/toastui-editor.min.css">
+    <link rel="stylesheet" href="libs/toastui-editor-dark.min.css">
+    <!-- Chart -->
+    <link rel="stylesheet" href="libs/toastui-chart.css">
+    <!-- Code Highlight -->
+    <link rel="stylesheet" href="libs/prism.min.css">
+    <link rel="stylesheet" href="libs/toastui-editor-plugin-code-syntax-highlight.min.css">
+    <!-- Color syntax -->
+    <link rel="stylesheet" href="libs/tui-color-picker.css">
+    <link rel="stylesheet" href="libs/toastui-editor-plugin-color-syntax.min.css">
+    <!-- Merged Table -->
+    <link rel="stylesheet" href="libs/toastui-editor-plugin-table-merged-cell.min.css">
+
+    <!-- <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor-dark.min.css"> -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+    <header class="toolbar">
+        <div class="left-controls">
+            <div class="dropdown">
+                <button class="dropbtn">☰</button>
+                <div class="dropdown-content">
+                    <button id="newMd">New</button>
+                    <button id="saveBtn">Save</button>
+                    <button id="saveAsBtn">Save As</button>
+                    <button id="importMd">Import</button>
+                    <input type="file" id="fileInput" accept=".md" hidden>
+                    <button id="exportMd">Export MD</button>
+                    <button id="exportHtml">Export HTML</button>
+                    <button id="exportStyledHtml">Export Styled HTML</button>
+                    <hr>
+                    <label class="dropdown-item">
+                        <input type="checkbox" id="autosave-setting"> <span>Auto Save</span>
+                    </label>
+                    <label class="dropdown-item">
+                        <input type="checkbox" id="themeToggle"> <span>Dark Theme</span>
+                    </label>
+                    <label class="dropdown-item">
+                        <input type="checkbox" id="toggleDirection"> <span>RTL Direction</span>
+                    </label>
+                </div>
+            </div>
+            <p class="alert-message" id="alert"></p>
+        </div>
+        </div>
+    </header>
+
+    <div class="editor-container">
+        <div id="editor"></div>
+        <div id="preview" class="preview-pane"></div>
+    </div>
+
+    <!-- <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.js"></script> -->
+
+    <!-- Editor -->
+    <script src="libs/toastui-editor-all.min.js"></script>
+    <!-- Chart -->
+    <script src="libs/toastui-chart.min.js"></script>
+    <!-- Color Picker -->
+    <script src="libs/tui-color-picker.min.js"></script>
+    <!-- Editor's Plugin -->
+    <script src="libs/toastui-editor-plugin-chart.min.js"></script>
+    <script src="libs/toastui-editor-plugin-code-syntax-highlight-all.min.js"></script>
+    <script src="libs/toastui-editor-plugin-color-syntax.min.js"></script>
+    <script src="libs/toastui-editor-plugin-table-merged-cell.min.js"></script>
+    <script src="libs/toastui-editor-plugin-uml.min.js"></script>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js', {
+                    scope: './'
+                })
+                .then(registration => {
+                    setInterval(() => registration.update(), 3600000);
+                });
+        }
+    </script>
+</body>
+
+</html>
