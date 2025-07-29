@@ -1,3 +1,326 @@
+// AI Assistant Modal
+const aiModal = document.getElementById('aiAssistantModal');
+const aiBtn = document.getElementById('aiAssistantBtn');
+const closeModal = document.querySelector('.close');
+const aiStatus = document.getElementById('aiStatus');
+const aiError = document.getElementById('aiError');
+const spinner = document.querySelector('.spinner');
+
+// Show/hide modal
+aiBtn.addEventListener('click', () => {
+  aiModal.style.display = 'flex';
+});
+
+closeModal.addEventListener('click', () => {
+  aiModal.style.display = 'none';
+});
+
+window.addEventListener('click', (e) => {
+  if (e.target === aiModal) {
+    aiModal.style.display = 'none';
+  }
+});
+
+// Role selection and custom instructions
+const customInstructionsToggle = document.getElementById('customInstructionsToggle');
+const customInstructionsSection = document.getElementById('customInstructionsSection');
+const aiRole = document.getElementById('aiRole');
+const customRole = document.getElementById('customRole');
+const customPrompt = document.getElementById('customPrompt');
+const customTemp = document.getElementById('customTemp');
+const customTopP = document.getElementById('customTopP');
+
+customInstructionsToggle.addEventListener('change', () => {
+  customInstructionsSection.style.display = customInstructionsToggle.checked ? 'block' : 'none';
+});
+
+// Load saved roles
+// Predefined roles for first-time users
+const preDefinedRoles = [
+  {
+    id: 1,
+    role: "writer",
+    prompt: 'You are a professional book writer.',
+    temperature: 0.5,
+    top_p: 0.5
+  },
+  {
+    id: 2,
+    role: "blogger",
+    prompt: 'You are an expert WordPress blogger.',
+    temperature: 0.4,
+    top_p: 0.3
+  },
+  {
+    id: 3,
+    role: "health",
+    prompt: 'You are a human health and nutrition assistant.',
+    temperature: 0.7,
+    top_p: 0.8
+  },
+  {
+    id: 4,
+    role: "coach",
+    prompt: 'You are a personal training and fitness coach.',
+    temperature: 0.6,
+    top_p: 0.7
+  }
+];
+
+const savedRoles = localStorage.getItem('aiRoles');
+console.log(savedRoles);
+
+let roles = [];
+if (savedRoles) {
+  roles = JSON.parse(savedRoles);
+} else {
+  roles = preDefinedRoles;
+  localStorage.setItem('aiRoles', JSON.stringify(roles));
+}
+
+aiRole.innerHTML = '';
+roles.forEach(role => {
+  const option = document.createElement('option');
+  option.value = role.id;
+  option.textContent = role.role;
+  aiRole.appendChild(option);
+});
+
+// Save custom role
+document.getElementById('saveCustomRole').addEventListener('click', () => {
+  const roles = JSON.parse(localStorage.getItem('aiRoles') || '[]');
+  const newRole = {
+    id: roles.length + 1,
+    role: customRole.value,
+    prompt: customPrompt.value,
+    temperature: parseFloat(customTemp.value),
+    top_p: parseFloat(customTopP.value)
+  };
+  roles.push(newRole);
+  localStorage.setItem('aiRoles', JSON.stringify(roles));
+  
+  const option = document.createElement('option');
+  option.value = newRole.id;
+  option.textContent = newRole.role;
+  aiRole.appendChild(option);
+  
+  aiRole.value = newRole.id;
+  customInstructionsToggle.checked = false;
+  customInstructionsSection.style.display = 'none';
+});
+
+// Settings panel
+const aiProvider = document.getElementById('aiProvider');
+const apiEndpoint = document.getElementById('apiEndpoint');
+const apiKey = document.getElementById('apiKey');
+const aiModel = document.getElementById('aiModel');
+
+// Load settings from localStorage
+function loadSettings() {
+  const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
+  if (settings.provider) aiProvider.value = settings.provider;
+  if (settings.endpoint) apiEndpoint.value = settings.endpoint;
+  if (settings.key) apiKey.value = atob(settings.key); // Decode from base64
+}
+
+// Save settings to localStorage
+function saveSettings() {
+  const settings = {
+    provider: aiProvider.value,
+    endpoint: apiEndpoint.value,
+    key: btoa(apiKey.value) // Encode to base64
+  };
+  localStorage.setItem('aiSettings', JSON.stringify(settings));
+}
+
+// Load models from API
+async function loadModels() {
+  if (aiProvider.value === 'openai' && !apiKey.value) {
+    aiError.textContent = 'API key required for OpenAI';
+    return;
+  }
+  
+  try {
+    spinner.style.display = 'block';
+    aiError.textContent = '';
+    
+    const response = await fetch(apiEndpoint.value + '/models', {
+      headers: {
+        'Authorization': `Bearer ${apiKey.value}`
+      }
+    });
+    
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    
+    const data = await response.json();
+    aiModel.innerHTML = '';
+    data.data.forEach(model => {
+      const option = document.createElement('option');
+      option.value = model.id;
+      option.textContent = model.id;
+      aiModel.appendChild(option);
+    });
+  } catch (err) {
+    aiError.textContent = err.message;
+  } finally {
+    spinner.style.display = 'none';
+  }
+}
+
+// Event listeners for settings
+aiProvider.addEventListener('change', loadSettings);
+apiEndpoint.addEventListener('change', saveSettings);
+apiKey.addEventListener('change', saveSettings);
+aiProvider.addEventListener('change', loadModels);
+document.getElementById('loadModelsBtn').addEventListener('click', loadModels);
+
+// Initialize settings
+loadSettings();
+
+// Write with AI panel
+const writePrompt = document.getElementById('writePrompt');
+const generateOutlineBtn = document.getElementById('generateOutlineBtn');
+const outlinePreview = document.getElementById('outlinePreview');
+const outlineActions = document.getElementById('outlineActions');
+const confirmOutlineBtn = document.getElementById('confirmOutlineBtn');
+const regenerateOutlineBtn = document.getElementById('regenerateOutlineBtn');
+const cancelOutlineBtn = document.getElementById('cancelOutlineBtn');
+
+let currentOutline = '';
+
+generateOutlineBtn.addEventListener('click', async () => {
+  if (!writePrompt.value) {
+    aiError.textContent = 'Please enter a prompt';
+    return;
+  }
+  
+  try {
+    spinner.style.display = 'block';
+    aiError.textContent = '';
+    
+    const outline = await generateContent(
+      `Based on the following user request, generate a brief summary and a list of headlines or table of contents. Don't write the full article yet.\n\nRequest: ${writePrompt.value}`
+    );
+    
+    outlinePreview.innerHTML = outline.replace(/\n/g, '<br>');
+    outlineActions.style.display = 'block';
+    currentOutline = outline;
+  } catch (err) {
+    aiError.textContent = err.message;
+  } finally {
+    spinner.style.display = 'none';
+  }
+});
+
+confirmOutlineBtn.addEventListener('click', async () => {
+  try {
+    spinner.style.display = 'block';
+    aiError.textContent = '';
+    
+    const fullContent = await generateContent(
+      `Please write the full content based on the following structure and topic:\n\nTopic: ${writePrompt.value}\nOutline: ${currentOutline}`
+    );
+    
+    const writeMode = document.querySelector('input[name="writeMode"]:checked').value;
+    if (writeMode === 'replace') {
+      if (confirm('Replace current document?')) {
+        editor.setMarkdown(fullContent);
+      }
+    } else {
+      const currentContent = editor.getMarkdown();
+      editor.setMarkdown(currentContent + '\n\n' + fullContent);
+    }
+    
+    aiModal.style.display = 'none';
+  } catch (err) {
+    aiError.textContent = err.message;
+  } finally {
+    spinner.style.display = 'none';
+  }
+});
+
+regenerateOutlineBtn.addEventListener('click', () => {
+  generateOutlineBtn.click();
+});
+
+cancelOutlineBtn.addEventListener('click', () => {
+  outlinePreview.innerHTML = '';
+  outlineActions.style.display = 'none';
+});
+
+// Modify/Extend panel
+const modifyPrompt = document.getElementById('modifyPrompt');
+const modifyBtn = document.getElementById('modifyBtn');
+
+modifyBtn.addEventListener('click', async () => {
+  const selectedText = editor.getSelectedText();
+  if (!selectedText) {
+    aiError.textContent = 'Please select some text';
+    return;
+  }
+  
+  if (!modifyPrompt.value) {
+    aiError.textContent = 'Please enter instructions';
+    return;
+  }
+  
+  try {
+    spinner.style.display = 'block';
+    aiError.textContent = '';
+    
+    const mode = document.querySelector('input[name="modifyMode"]:checked').value;
+    const instruction = mode === 'modify' ?
+      `Modify the following text: ${selectedText}\n\nInstructions: ${modifyPrompt.value}` :
+      `Write new content based on: ${selectedText}\n\nInstructions: ${modifyPrompt.value}`;
+    
+    const result = await generateContent(instruction);
+    
+    if (mode === 'modify') {
+      editor.replaceSelection(result);
+    } else {
+      const currentContent = editor.getMarkdown();
+      editor.setMarkdown(currentContent + '\n\n' + result);
+    }
+  } catch (err) {
+    aiError.textContent = err.message;
+  } finally {
+    spinner.style.display = 'none';
+  }
+});
+
+// Generate content with AI
+async function generateContent(prompt) {
+  const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
+  const roles = JSON.parse(localStorage.getItem('aiRoles') || '[]');
+  const selectedRole = roles.find(r => r.id == aiRole.value);
+  
+  const requestBody = {
+    model: aiModel.value || 'gpt-3.5-turbo',
+    messages: [
+      {role: 'system', content: selectedRole?.prompt || 'You are a helpful assistant'},
+      {role: 'user', content: prompt}
+    ],
+    temperature: selectedRole?.temperature || 0.7,
+    top_p: selectedRole?.top_p || 0.8
+  };
+  
+  const response = await fetch(settings.endpoint || 'https://text.pollinations.ai/openai', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(settings.provider === 'openai' && {'Authorization': `Bearer ${atob(settings.key)}`})
+    },
+    body: JSON.stringify(requestBody)
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
 // Initialize Toast UI Editor with RTL support
 const editor = new toastui.Editor({
   el: document.querySelector('#editor'),

@@ -58,14 +58,108 @@
             </div>
             <p class="alert-message" id="alert"></p>
         </div>
-        <div class="right-controls">
+        <div class="toolbar-logo">
             <img src="img/MDify-badge.png" alt="" height="34px">
+        </div>
+        <div class="right-controls">
+            <button id="aiAssistantBtn" title="AI Assistant">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 3C8 6 6 8 3 8 6 8 8 10 8 13 8 10 10 8 13 8 10 8 8 6 8 3" transform="translate(-1 -1) scale(1.2 1.2)" stroke-width="1" stroke-opacity="1" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M8 3C8 6 6 8 3 8 6 8 8 10 8 13 8 10 10 8 13 8 10 8 8 6 8 3" transform="translate(-1 -0.5) scale(0.5 0.5)" stroke-width="1" stroke-opacity="1" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                AI Assistant
+            </button>
         </div>
     </header>
 
     <div class="editor-container">
         <div id="editor"></div>
         <div id="preview" class="preview-pane"></div>
+    </div>
+
+    <div id="aiAssistantModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>AI Assistant</h2>
+
+            <!-- Role Selection -->
+            <div class="role-selection">
+                <label for="aiRole">Role:</label>
+                <select id="aiRole"></select>
+                <label><input type="checkbox" id="customInstructionsToggle"> Custom Instructions</label>
+                <div id="customInstructionsSection" style="display:none">
+                    <input type="text" id="customRole" placeholder="Role">
+                    <textarea id="customPrompt" placeholder="System Prompt..."></textarea>
+                    <input type="number" id="customTemp" min="0" max="3" step="0.1" placeholder="Temperature">
+                    <input type="number" id="customTopP" min="0" max="1" step="0.1" placeholder="Top P">
+                    <button id="saveCustomRole">Save Role</button>
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <details>
+                <summary>⚙️ AI Settings</summary>
+                <div class="panel">
+                    <label>Provider:
+                        <select id="aiProvider">
+                            <option value="openai">OpenAI</option>
+                            <option value="pollinations">Pollinations.ai</option>
+                        </select>
+                    </label>
+                    <label>Endpoint:
+                        <input type="text" id="apiEndpoint" value="https://text.pollinations.ai/openai">
+                    </label>
+                    <label>API Key:
+                        <input type="password" id="apiKey">
+                    </label>
+                    <label>Model:
+                        <select id="aiModel"></select>
+                    </label>
+                    <button id="loadModelsBtn">Load Models</button>
+                </div>
+            </details>
+
+            <!-- Write with AI Panel -->
+            <details open>
+                <summary>✍️ Write with AI</summary>
+                <div class="panel">
+                    <textarea id="writePrompt" placeholder="Describe what you want to write..."></textarea>
+                    <label>
+                        <input type="radio" name="writeMode" value="append" checked> Append to document
+                    </label>
+                    <label>
+                        <input type="radio" name="writeMode" value="replace"> Replace document
+                    </label>
+                    <button id="generateOutlineBtn">Generate Outline</button>
+                    <div id="outlinePreview"></div>
+                    <div id="outlineActions" style="display:none">
+                        <button id="confirmOutlineBtn">Confirm and Write</button>
+                        <button id="regenerateOutlineBtn">Regenerate Outline</button>
+                        <button id="cancelOutlineBtn">Cancel</button>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Modify/Extend Panel -->
+            <details>
+                <summary>✏️ Modify or Extend</summary>
+                <div class="panel">
+                    <label>
+                        <input type="radio" name="modifyMode" value="modify" checked> Modify selected text
+                    </label>
+                    <label>
+                        <input type="radio" name="modifyMode" value="extend"> Write new content based on selection
+                    </label>
+                    <textarea id="modifyPrompt" placeholder="Instructions for AI..."></textarea>
+                    <button id="modifyBtn">Apply</button>
+                </div>
+            </details>
+
+            <!-- Status Area -->
+            <div id="aiStatus"></div>
+            <div id="aiError" class="error"></div>
+            <div class="spinner" style="display:none"></div>
+        </div>
     </div>
 
     <!-- <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.js"></script> -->

@@ -89,8 +89,8 @@ input {
     /* flex: 1; */
     /* padding: 1rem; */
     /* overflow-y: auto; */
-    overflow-y: hidden;
-    transition: all 0.3s ease;
+    /* overflow-y: hidden; */
+    /* transition: all 0.3s ease; */
 }
 
 #editor {
@@ -103,7 +103,7 @@ input {
     border-left: 1px solid var(--border-color);
 }
 
-.preview-pane {
+/* .preview-pane {
     font-family: var(--font-body);
     line-height: 1.6;
 }
@@ -112,7 +112,7 @@ input {
 .preview-pane h2,
 .preview-pane h3 {
     color: var(--text-color);
-}
+} */
 
 button,
 select {
@@ -124,7 +124,7 @@ select {
     cursor: pointer;
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
     .editor-container {
         flex-direction: column;
     }
@@ -135,7 +135,7 @@ select {
         border-right: none;
         border-bottom: 1px solid var(--border-color);
     }
-}
+} */
 
 /* .toastui-editor-md-code,.toastui-editor-md-code-block */
 .toastui-editor-defaultUI,
@@ -251,10 +251,22 @@ select {
     top: 3px;
 }
 
+#aiAssistantBtn {
+    display: flex;
+    gap: 6px;
+}
+
 .toastui-editor-md-code-block-line-background,
 .toastui-editor-md-preview pre {
     direction: ltr !important;
 }
+
+.ProseMirror {
+    height: 100%;
+}
+
+
+/* ///////////////////////////////////  Start RTL Override CSS  /////////////////////////////////// */
 
 [dir="rtl"] .task-list-item {
     margin-right: 0;
@@ -267,6 +279,19 @@ select {
     left: auto;
     right: 0;
 }
+
+[dir="rtl"] .toastui-editor-contents dir,
+[dir="rtl"] .toastui-editor-contents menu,
+[dir="rtl"] .toastui-editor-contents ol,
+[dir="rtl"] .toastui-editor-contents ul {
+    padding-right: 24px;
+}
+
+[dir="rtl"] .toastui-editor-contents ul>li:before {
+    margin-right: -17px;
+}
+
+/* ///////////////////////////////////  End RTL Override CSS  /////////////////////////////////// */
 
 /* ///////////////////////////////////  Start Page Break CSS  /////////////////////////////////// */
 
@@ -306,9 +331,148 @@ del:has(+ del + del):after {
     color: var(--text-color);
 }
 
-del:has(+ del + del) + del, del:has(+ del + del) + del + del {
+del:has(+ del + del)+del,
+del:has(+ del + del)+del+del {
     display: none;
 }
 
 
 /* ///////////////////////////////////  End Page Break CSS  /////////////////////////////////// */
+
+/* AI Assistant Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    direction: ltr;
+}
+
+.modal-content {
+    background-color: var(--bg-color);
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* [dir="rtl"] .close {
+    right: auto;
+    left: 15px;
+} */
+
+.modal h2 {
+    margin-bottom: 15px;
+}
+
+.role-selection,
+.panel {
+    margin-bottom: 15px;
+}
+
+.panel {
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.modal details {
+    margin-bottom: 10px;
+}
+
+.modal summary {
+    cursor: pointer;
+    padding: 8px;
+    background-color: var(--hover-bg);
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.modal label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.modal input[type="text"],
+.modal input[type="password"],
+.modal input[type="number"],
+.modal textarea,
+.modal select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.modal textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.modal button {
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+#customInstructionsSection {
+    margin-top: 10px;
+}
+
+#customInstructionsSection input {
+    margin-bottom: 5px;
+}
+
+#outlinePreview {
+    padding: 10px;
+    border: 1px dashed var(--border-color);
+    border-radius: 4px;
+    margin: 10px 0;
+    min-height: 50px;
+    background-color: var(--hover-bg);
+}
+
+.error {
+    color: #e74c3c;
+    margin-top: 10px;
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top: 4px solid var(--secondary-color);
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 10px auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
