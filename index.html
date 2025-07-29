@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MDify - RTL Editor</title>
-    <link rel="shortcut icon" href="img/MDify-icon.png" type="image/png">
+    <title>MDify - Markdown Editor with RTL Support</title>
+    <link rel="shortcut icon" href="img/MDify-192.png" type="image/png">
     <!-- Editor -->
     <link rel="stylesheet" href="libs/toastui-editor.min.css">
     <link rel="stylesheet" href="libs/toastui-editor-dark.min.css">
@@ -20,9 +20,7 @@
     <!-- Merged Table -->
     <link rel="stylesheet" href="libs/toastui-editor-plugin-table-merged-cell.min.css">
 
-    <!-- <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css"> -->
-    <!-- <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor-dark.min.css"> -->
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css" rel="stylesheet">
+    <link rel="stylesheet" href="font/vazirmatn-font-face.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
 </head>
@@ -31,7 +29,12 @@
     <header class="toolbar">
         <div class="left-controls">
             <div class="dropdown">
-                <button class="dropbtn">☰</button>
+                <button class="dropbtn">
+                    <!-- ☰ -->
+                    <svg width="16px" height="16px" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 6H24M1 14H24M1 22H24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
                 <div class="dropdown-content">
                     <button id="newMd">New</button>
                     <button id="saveBtn">Save</button>
@@ -55,6 +58,8 @@
             </div>
             <p class="alert-message" id="alert"></p>
         </div>
+        <div class="right-controls">
+            <img src="img/MDify-badge.png" alt="" height="34px">
         </div>
     </header>
 

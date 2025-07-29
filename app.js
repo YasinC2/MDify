@@ -186,6 +186,14 @@ document.getElementById('exportHtml').addEventListener('click', async () => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>document-${now}</title>
+    <style>
+    @import url("https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css");
+    body {
+        font-family: "Vazirmatn", Tahoma, Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif;
+        ${isRTL ? 'direction: rtl;' : ''}
+    }
+    pre{direction: ltr;}
+    </style>
 </head>
 <body>
     ${content}
@@ -247,6 +255,30 @@ right: 0;
     body {
         font-family: "Vazirmatn", Tahoma, Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif;
         ${isRTL ? 'direction: rtl;' : ''}
+    }
+    /* 
+      Rule for the FIRST <del> in a sequence of three.
+      This is the one we will apply the special styles to.
+    */
+    del:has(+ del + del) {
+      /* This makes the element a block, which is required for page-break-after to work reliably. */
+      display: block;
+      /* The important rule for printing */
+      page-break-after: always;
+      /* These rules hide it visually without removing it from the layout, so the page break still works. */
+      height: 0;
+      visibility: hidden;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    /* 
+      Rule for the SECOND and THIRD <del> tags in the sequence.
+      We simply hide them completely.
+    */
+    del:has(+ del + del) + del,
+    del:has(+ del + del) + del + del {
+      display: none;
     }
 
     ${prismCSS}

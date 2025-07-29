@@ -26,9 +26,15 @@ const ASSETS = [
   'libs/toastui-editor.min.css',
   'libs/tui-color-picker.css',
   'libs/tui-color-picker.min.js',
-  'https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css',
-  '/icon-192.png',
-  '/icon-512.png'
+  'font/Vazirmatn-Regular.woff2',
+  'font/Vazirmatn-Bold.woff2',
+  'font/Vazirmatn-Thin.woff2',
+  'font/Vazirmatn-Light.woff2',
+  'font/Vazirmatn-Medium.woff2',
+  'font/Vazirmatn-Black.woff2',
+  'font/vazirmatn-font-face.css',
+  'img/MDify-192.png',
+  'img/MDify-512.png'
 ];
 
 self.addEventListener('install', (event) => {

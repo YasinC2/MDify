@@ -188,6 +188,7 @@ select {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     cursor: pointer;
+    line-height: 0;
 }
 
 .dropdown-content {
@@ -220,6 +221,7 @@ select {
     cursor: pointer;
     font-size: 14px;
     direction: ltr;
+    border-radius: 0;
 }
 
 .dropdown-content button:hover,
@@ -265,3 +267,48 @@ select {
     left: auto;
     right: 0;
 }
+
+/* ///////////////////////////////////  Start Page Break CSS  /////////////////////////////////// */
+
+del:has(+ del + del) {
+    display: block;
+    page-break-after: always;
+    height: 1px;
+    /* visibility: hidden; */
+    margin: 20px 0;
+    /* padding: 0; */
+    border-top: 2px dashed #aaa;
+    position: relative;
+    color: var(--bg-color) !important;
+}
+
+del:has(+ del + del):before {
+    content: '.';
+    display: inline-block;
+    position: absolute;
+    margin: 0 auto;
+    left: 0;
+    right: 0;
+    width: 94px;
+    top: -10px;
+    background-color: var(--bg-color);
+    color: var(--bg-color);
+}
+
+del:has(+ del + del):after {
+    content: 'Page Break';
+    display: block;
+    width: 100%;
+    text-align: center;
+    position: absolute;
+    top: -10px;
+    /* background: #fff; */
+    color: var(--text-color);
+}
+
+del:has(+ del + del) + del, del:has(+ del + del) + del + del {
+    display: none;
+}
+
+
+/* ///////////////////////////////////  End Page Break CSS  /////////////////////////////////// */
