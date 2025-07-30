@@ -26,6 +26,14 @@
 </head>
 
 <body>
+    <div id="deviceAlert" class="device-alert">
+        <p>
+            This tool is optimized for desktop or large displays.
+            <br>
+            On smaller screens, we recommend using the WYSIWYG mode for a better experience.
+        </p>
+        <button id="dismissDeviceAlert">Dismiss</button>
+    </div>
     <header class="toolbar">
         <div class="left-controls">
             <div class="dropdown">
@@ -79,86 +87,129 @@
 
     <div id="aiAssistantModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>AI Assistant</h2>
-
-            <!-- Role Selection -->
-            <div class="role-selection">
-                <label for="aiRole">Role:</label>
-                <select id="aiRole"></select>
-                <label><input type="checkbox" id="customInstructionsToggle"> Custom Instructions</label>
-                <div id="customInstructionsSection" style="display:none">
-                    <input type="text" id="customRole" placeholder="Role">
-                    <textarea id="customPrompt" placeholder="System Prompt..."></textarea>
-                    <input type="number" id="customTemp" min="0" max="3" step="0.1" placeholder="Temperature">
-                    <input type="number" id="customTopP" min="0" max="1" step="0.1" placeholder="Top P">
-                    <button id="saveCustomRole">Save Role</button>
-                </div>
+            <div class="modal-header">
+                <h2>AI Assistant</h2>
+                <span class="close">&times;</span>
             </div>
+            <div class="modal-body">
+                <!-- Role Selection -->
+                <div class="role-selection">
+                    <div class="form-group">
+                        <label for="aiRole">Role:</label>
+                        <select id="aiRole"></select>
+                    </div>
 
-            <!-- Settings Panel -->
-            <details>
-                <summary>⚙️ AI Settings</summary>
-                <div class="panel">
-                    <label>Provider:
-                        <select id="aiProvider">
-                            <option value="openai">OpenAI</option>
-                            <option value="pollinations">Pollinations.ai</option>
-                        </select>
-                    </label>
-                    <label>Endpoint:
-                        <input type="text" id="apiEndpoint" value="https://text.pollinations.ai/openai">
-                    </label>
-                    <label>API Key:
-                        <input type="password" id="apiKey">
-                    </label>
-                    <label>Model:
-                        <select id="aiModel"></select>
-                    </label>
-                    <button id="loadModelsBtn">Load Models</button>
-                </div>
-            </details>
-
-            <!-- Write with AI Panel -->
-            <details open>
-                <summary>✍️ Write with AI</summary>
-                <div class="panel">
-                    <textarea id="writePrompt" placeholder="Describe what you want to write..."></textarea>
-                    <label>
-                        <input type="radio" name="writeMode" value="append" checked> Append to document
-                    </label>
-                    <label>
-                        <input type="radio" name="writeMode" value="replace"> Replace document
-                    </label>
-                    <button id="generateOutlineBtn">Generate Outline</button>
-                    <div id="outlinePreview"></div>
-                    <div id="outlineActions" style="display:none">
-                        <button id="confirmOutlineBtn">Confirm and Write</button>
-                        <button id="regenerateOutlineBtn">Regenerate Outline</button>
-                        <button id="cancelOutlineBtn">Cancel</button>
+                    <div class="">
+                        <label>
+                            <input type="checkbox" id="customInstructionsToggle">
+                            Custom Instructions
+                        </label>
+                    </div>
+                    <div id="customInstructionsSection" style="display:none">
+                        <input type="text" id="customRole" placeholder="Role">
+                        <textarea id="customPrompt" placeholder="System Prompt..."></textarea>
+                        <input type="number" id="customTemp" min="0" max="3" step="0.1" placeholder="Temperature">
+                        <input type="number" id="customTopP" min="0" max="1" step="0.1" placeholder="Top P">
+                        <button id="saveCustomRole">Save Role</button>
                     </div>
                 </div>
-            </details>
 
-            <!-- Modify/Extend Panel -->
-            <details>
-                <summary>✏️ Modify or Extend</summary>
-                <div class="panel">
-                    <label>
-                        <input type="radio" name="modifyMode" value="modify" checked> Modify selected text
-                    </label>
-                    <label>
-                        <input type="radio" name="modifyMode" value="extend"> Write new content based on selection
-                    </label>
-                    <textarea id="modifyPrompt" placeholder="Instructions for AI..."></textarea>
-                    <button id="modifyBtn">Apply</button>
+                <!-- Settings Panel -->
+                <details>
+                    <summary>⚙️ AI Settings</summary>
+                    <div class="panel">
+                        <div class="form-group">
+                            <label>Provider:
+                                <select id="aiProvider">
+                                    <option value="pollinations" selected>Pollinations.ai</option>
+                                    <option value="openai">OpenAI</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>Endpoint:
+                                <input type="text" id="apiEndpoint" value="https://text.pollinations.ai/openai">
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>API Key:
+                                <input type="password" id="apiKey">
+                                <p class="note">Note: Your API key is stored locally in your browser and never sent to external servers. You are responsible for the security of your browser settings.</p>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>Model:
+                                <select id="aiModel"></select>
+                            </label>
+                        </div>
+                        <button id="loadModelsBtn">Load Models</button>
+                    </div>
+                </details>
+
+                <!-- Write with AI Panel -->
+                <details open>
+                    <summary>✍️ Write with AI</summary>
+                    <div class="panel">
+                        <div class="form-group">
+                            <label for="writePrompt">AI Prompt:</label>
+                            <textarea id="writePrompt" placeholder="Describe what you want to write..."></textarea>
+                            <p class="note">Provide a clear description of the content you want to generate</p>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="radio" name="writeMode" value="append" checked> Append to document
+                            </label>
+                            <label>
+                                <input type="radio" name="writeMode" value="replace"> Replace document
+                            </label>
+                        </div>
+                        <button id="generateOutlineBtn">Generate Outline</button>
+                        <div id="outlinePreview"></div>
+                        <div class="additional-notes form-group">
+                            <label for="additionalNotes">Additional Notes:</label>
+                            <textarea id="additionalNotes" placeholder="Provide any additional context or requirements for the AI to consider..."></textarea>
+                        </div>
+                        <div id="outlineActions" style="display:none">
+                            <button id="confirmOutlineBtn">Confirm and Write</button>
+                            <button id="regenerateOutlineBtn">Regenerate Outline</button>
+                            <button id="cancelOutlineBtn">Cancel</button>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Modify/Extend Panel -->
+                <details>
+                    <summary>✏️ Modify or Extend</summary>
+                    <div class="panel">
+                        <div class="form-group">
+                            <label>
+                                <input type="radio" name="modifyMode" value="modify" checked>
+                                Modify selected text
+                            </label>
+                            <label>
+                                <input type="radio" name="modifyMode" value="extend">
+                                Write new content based on selection
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="modifyPrompt">Instructions:</label>
+                            <textarea id="modifyPrompt" placeholder="Instructions for AI..."></textarea>
+                            <p class="note">Explain how you want to modify or extend the selected text</p>
+                        </div>
+                        <button id="modifyBtn">Apply</button>
+                    </div>
+                </details>
+
+            </div>
+            <div class="modal-footer">
+                <!-- Status Area -->
+                <div class="modal-alert">
+                    <div id="aiStatus"></div>
+                    <div id="aiError" class="error"></div>
+                    <div class="spinner" style="display:none"></div>
+                    <!-- <button>&times;</button> -->
                 </div>
-            </details>
-
-            <!-- Status Area -->
-            <div id="aiStatus"></div>
-            <div id="aiError" class="error"></div>
-            <div class="spinner" style="display:none"></div>
+            </div>
         </div>
     </div>
 

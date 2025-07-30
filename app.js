@@ -68,7 +68,7 @@ const preDefinedRoles = [
 ];
 
 const savedRoles = localStorage.getItem('aiRoles');
-console.log(savedRoles);
+// console.log(savedRoles);
 
 let roles = [];
 if (savedRoles) {
@@ -190,7 +190,7 @@ let currentOutline = '';
 
 generateOutlineBtn.addEventListener('click', async () => {
   if (!writePrompt.value) {
-    aiError.textContent = 'Please enter a prompt';
+    aiError.textContent = 'Please enter a prompt!';
     return;
   }
   
@@ -214,18 +214,23 @@ generateOutlineBtn.addEventListener('click', async () => {
 
 confirmOutlineBtn.addEventListener('click', async () => {
   try {
+    const writeMode = document.querySelector('input[name="writeMode"]:checked').value;
+    if (!confirm('You are about to replace the current document. Do you want to continue?')) {
+      return;
+    }
     spinner.style.display = 'block';
     aiError.textContent = '';
     
-    const fullContent = await generateContent(
-      `Please write the full content based on the following structure and topic:\n\nTopic: ${writePrompt.value}\nOutline: ${currentOutline}`
-    );
+    const additionalNotes = document.getElementById('additionalNotes').value;
+    const prompt = additionalNotes ?
+        `Please write the full content based on the following structure and topic, and consider these additional notes:\n\nTopic: ${writePrompt.value}\nOutline: ${currentOutline}\nAdditional Notes: ${additionalNotes}` :
+        `Please write the full content based on the following structure and topic:\n\nTopic: ${writePrompt.value}\nOutline: ${currentOutline}`;
     
-    const writeMode = document.querySelector('input[name="writeMode"]:checked').value;
+    const fullContent = await generateContent(prompt);
+    
     if (writeMode === 'replace') {
-      if (confirm('Replace current document?')) {
-        editor.setMarkdown(fullContent);
-      }
+      // if (confirm('Replace current document?')) {}
+      editor.setMarkdown(fullContent);
     } else {
       const currentContent = editor.getMarkdown();
       editor.setMarkdown(currentContent + '\n\n' + fullContent);
@@ -255,7 +260,7 @@ const modifyBtn = document.getElementById('modifyBtn');
 modifyBtn.addEventListener('click', async () => {
   const selectedText = editor.getSelectedText();
   if (!selectedText) {
-    aiError.textContent = 'Please select some text';
+    aiError.textContent = 'Please select some text!';
     return;
   }
   
@@ -318,29 +323,37 @@ async function generateContent(prompt) {
   }
   
   const data = await response.json();
-  return data.choices[0].message.content;
+  return [data.choices[0].message.content, usage.total_tokens];
 }
 
-// Initialize Toast UI Editor with RTL support
+// Initialize Toast UI Editor with RTL support and custom commands
 const editor = new toastui.Editor({
-  el: document.querySelector('#editor'),
-  initialEditType: 'markdown',
-  previewStyle: 'vertical',
-  height: '100%',
-  usageStatistics: false,
-  theme: localStorage.getItem('selectedTheme') === 'dark' ? 'dark' : 'light',
-  plugins: [
-    toastui.Editor.plugin.chart,
-    toastui.Editor.plugin.codeSyntaxHighlight,
-    toastui.Editor.plugin.colorSyntax,
-    toastui.Editor.plugin.tableMergedCell
-  ],
-  hooks: {
-    async 'addImageBlobHook'(blob, callback) {
-      // Handle image uploads
-      callback('https://via.placeholder.com/150');
+    el: document.querySelector('#editor'),
+    initialEditType: 'markdown',
+    previewStyle: 'vertical',
+    height: '100%',
+    usageStatistics: false,
+    theme: localStorage.getItem('selectedTheme') === 'dark' ? 'dark' : 'light',
+    plugins: [
+        toastui.Editor.plugin.chart,
+        toastui.Editor.plugin.codeSyntaxHighlight,
+        toastui.Editor.plugin.colorSyntax,
+        toastui.Editor.plugin.tableMergedCell
+    ],
+    hooks: {
+        async 'addImageBlobHook'(blob, callback) {
+            // Handle image uploads
+            callback('https://via.placeholder.com/150');
+        }
+    },
+    customCommand: {
+        // Add custom command to insert text at cursor position
+        name: 'insertText',
+        exec: (editor, text) => {
+            const cm = editor.getCodeMirror();
+            cm.replaceSelection(text);
+        }
     }
-  }
 });
 let currentFileHandle = null;
 // Direction handling
@@ -696,8 +709,34 @@ function showAlert(text) {
   }, 3000);
 }
 
+// Handle device alert
+const deviceAlert = document.getElementById('deviceAlert');
+const dismissDeviceAlert = document.getElementById('dismissDeviceAlert');
+
+dismissDeviceAlert.addEventListener('click', () => {
+    deviceAlert.classList.add('hidden');
+    localStorage.setItem('dismissedDeviceAlert', 'true');
+});
+
+// Only show alert on small screens and if not previously dismissed
+if (window.matchMedia('(max-width: 768px)').matches &&
+    !localStorage.getItem('dismissedDeviceAlert')) {
+    deviceAlert.style.display = 'flex';
+}
+
+// // Add event listener for custom command
+// document.addEventListener('keydown', (e) => {
+//     if (e.ctrlKey && e.key === 'i') {
+//         e.preventDefault();
+//         const textToInsert = prompt('Enter text to insert at cursor:');
+//         if (textToInsert) {
+//             editor.exec('insertText', textToInsert);
+//         }
+//     }
+// });
+
 async function loadFile(path) {
-  const response = await fetch(path);
-  if (!response.ok) throw new Error(`Failed to load ${path}`);
-  return await response.text();
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(`Failed to load ${path}`);
+    return await response.text();
 }
