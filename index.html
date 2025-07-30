@@ -49,7 +49,7 @@
                     <button id="saveAsBtn">Save As</button>
                     <button id="importMd">Import</button>
                     <input type="file" id="fileInput" accept=".md" hidden>
-                    <button id="exportMd">Export MD</button>
+                    <button id="exportMd" style="display: none;">Export MD</button>
                     <button id="exportHtml">Export HTML</button>
                     <button id="exportStyledHtml">Export Styled HTML</button>
                     <hr>
@@ -62,6 +62,13 @@
                     <label class="dropdown-item">
                         <input type="checkbox" id="toggleDirection"> <span>RTL Direction</span>
                     </label>
+                    <hr>
+                    <a href="https://github.com/YasinC2/MDify/" target="_blank" class="dropdown-item">
+                        <span>MDify GitHub</span>
+                    </a>
+                    <a href="https://github.com/YasinC2/MDify/issues" target="_blank" class="dropdown-item">
+                        <span>Report Issue</span>
+                    </a>
                 </div>
             </div>
             <p class="alert-message" id="alert"></p>
@@ -105,11 +112,24 @@
                             Custom Instructions
                         </label>
                     </div>
-                    <div id="customInstructionsSection" style="display:none">
-                        <input type="text" id="customRole" placeholder="Role">
-                        <textarea id="customPrompt" placeholder="System Prompt..."></textarea>
-                        <input type="number" id="customTemp" min="0" max="3" step="0.1" placeholder="Temperature">
-                        <input type="number" id="customTopP" min="0" max="1" step="0.1" placeholder="Top P">
+                    <div id="customInstructionsSection" style="display: none;" class="panel">
+                        <div class="form-group">
+                            <label for="customRole">Role:</label>
+                            <input type="text" id="customRole" placeholder="Role">
+                        </div>
+                        <div class="form-group">
+                            <label for="customPrompt">System Prompt:</label>
+                            <textarea id="customPrompt" placeholder="System Prompt..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="customTemp">Temperature:</label>
+                            <input type="number" id="customTemp" min="0" max="3" step="0.1" value="0.5" placeholder="Temperature - min:0 max:3">
+                        </div>
+                        <div class="form-group">
+                            <label for="customTopP">Top P:</label>
+                            <input type="number" id="customTopP" min="0" max="1" step="0.1" value="0.5" placeholder="Top P - min:0 max:1">
+                        </div>
+                        
                         <button id="saveCustomRole">Save Role</button>
                     </div>
                 </div>
@@ -204,7 +224,7 @@
             <div class="modal-footer">
                 <!-- Status Area -->
                 <div class="modal-alert">
-                    <div id="aiStatus"></div>
+                    <!-- <div id="aiStatus" class="success"></div> -->
                     <div id="aiError" class="error"></div>
                     <div class="spinner" style="display:none"></div>
                     <!-- <button>&times;</button> -->
@@ -212,6 +232,8 @@
             </div>
         </div>
     </div>
+    
+    <span class="popup-message" id="aiStatus">Test</span>
 
     <!-- <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.js"></script> -->
 

@@ -64,20 +64,26 @@ const preDefinedRoles = [
     prompt: 'You are a personal training and fitness coach.',
     temperature: 0.6,
     top_p: 0.7
-  }
+  },
 ];
 
-const savedRoles = localStorage.getItem('aiRoles');
-// console.log(savedRoles);
-
-let roles = [];
-if (savedRoles) {
-  roles = JSON.parse(savedRoles);
-} else {
-  roles = preDefinedRoles;
-  localStorage.setItem('aiRoles', JSON.stringify(roles));
+// Load user roles from localStorage
+let userRoles = [];
+const savedUserRoles = localStorage.getItem('aiRoles');
+if (savedUserRoles) {
+  userRoles = JSON.parse(savedUserRoles);
 }
 
+// Merge predefined roles and user roles (predefined come first)
+let roles = [...preDefinedRoles, ...userRoles];
+
+// Ensure user roles have IDs starting from 100
+let maxUserId = 99;
+userRoles.forEach(role => {
+  if (role.id > maxUserId) maxUserId = role.id;
+});
+
+// Initialize role dropdown
 aiRole.innerHTML = '';
 roles.forEach(role => {
   const option = document.createElement('option');
@@ -86,19 +92,33 @@ roles.forEach(role => {
   aiRole.appendChild(option);
 });
 
+// aiRole.innerHTML = '';
+// roles.forEach(role => {
+//   const option = document.createElement('option');
+//   option.value = role.id;
+//   option.textContent = role.role;
+//   aiRole.appendChild(option);
+// });
+
 // Save custom role
 document.getElementById('saveCustomRole').addEventListener('click', () => {
-  const roles = JSON.parse(localStorage.getItem('aiRoles') || '[]');
+  // Create new role with ID starting from 100
+  maxUserId++;
   const newRole = {
-    id: roles.length + 1,
+    id: maxUserId,
     role: customRole.value,
     prompt: customPrompt.value,
     temperature: parseFloat(customTemp.value),
     top_p: parseFloat(customTopP.value)
   };
-  roles.push(newRole);
-  localStorage.setItem('aiRoles', JSON.stringify(roles));
   
+  // Add to user roles and save to localStorage
+  userRoles.push(newRole);
+  localStorage.setItem('aiRoles', JSON.stringify(userRoles));
+  
+  // Update merged roles and rebuild dropdown
+  roles = [...preDefinedRoles, ...userRoles];
+
   const option = document.createElement('option');
   option.value = newRole.id;
   option.textContent = newRole.role;
@@ -149,9 +169,22 @@ async function loadModels() {
         'Authorization': `Bearer ${apiKey.value}`
       }
     });
-    
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    
+
+    if (!response.ok) {
+      let errorMessage = `API error: ${response.status}`;
+
+      try {
+        const data = await response.json(); // try to parse error body
+        if (data.error) {
+          errorMessage += ` - ${data.error}`;
+        }
+      } catch (e) {
+        // if response is not JSON or parsing failed
+        errorMessage += " - Unknown error";
+      }
+      throw new Error(errorMessage);
+    }
+
     const data = await response.json();
     aiModel.innerHTML = '';
     data.data.forEach(model => {
@@ -198,13 +231,14 @@ generateOutlineBtn.addEventListener('click', async () => {
     spinner.style.display = 'block';
     aiError.textContent = '';
     
-    const outline = await generateContent(
+    const [outline, usage] = await generateContent(
       `Based on the following user request, generate a brief summary and a list of headlines or table of contents. Don't write the full article yet.\n\nRequest: ${writePrompt.value}`
     );
     
     outlinePreview.innerHTML = outline.replace(/\n/g, '<br>');
     outlineActions.style.display = 'block';
     currentOutline = outline;
+    popupAlert(`Outline generated successfully! Total Token Usage: ${usage}`);
   } catch (err) {
     aiError.textContent = err.message;
   } finally {
@@ -220,13 +254,14 @@ confirmOutlineBtn.addEventListener('click', async () => {
     }
     spinner.style.display = 'block';
     aiError.textContent = '';
+    aiStatus.textContent = '';
     
     const additionalNotes = document.getElementById('additionalNotes').value;
     const prompt = additionalNotes ?
         `Please write the full content based on the following structure and topic, and consider these additional notes:\n\nTopic: ${writePrompt.value}\nOutline: ${currentOutline}\nAdditional Notes: ${additionalNotes}` :
         `Please write the full content based on the following structure and topic:\n\nTopic: ${writePrompt.value}\nOutline: ${currentOutline}`;
     
-    const fullContent = await generateContent(prompt);
+    const [fullContent, usage] = await generateContent(prompt);
     
     if (writeMode === 'replace') {
       // if (confirm('Replace current document?')) {}
@@ -235,7 +270,8 @@ confirmOutlineBtn.addEventListener('click', async () => {
       const currentContent = editor.getMarkdown();
       editor.setMarkdown(currentContent + '\n\n' + fullContent);
     }
-    
+
+    popupAlert(`Full content generated successfully! Total Token Usage: ${usage}`);
     aiModal.style.display = 'none';
   } catch (err) {
     aiError.textContent = err.message;
@@ -278,7 +314,7 @@ modifyBtn.addEventListener('click', async () => {
       `Modify the following text: ${selectedText}\n\nInstructions: ${modifyPrompt.value}` :
       `Write new content based on: ${selectedText}\n\nInstructions: ${modifyPrompt.value}`;
     
-    const result = await generateContent(instruction);
+    const [result, usage] = await generateContent(instruction);
     
     if (mode === 'modify') {
       editor.replaceSelection(result);
@@ -286,6 +322,8 @@ modifyBtn.addEventListener('click', async () => {
       const currentContent = editor.getMarkdown();
       editor.setMarkdown(currentContent + '\n\n' + result);
     }
+
+    popupAlert(`Content modified successfully! Total Token Usage: ${usage}`);
   } catch (err) {
     aiError.textContent = err.message;
   } finally {
@@ -296,17 +334,17 @@ modifyBtn.addEventListener('click', async () => {
 // Generate content with AI
 async function generateContent(prompt) {
   const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
-  const roles = JSON.parse(localStorage.getItem('aiRoles') || '[]');
   const selectedRole = roles.find(r => r.id == aiRole.value);
   
   const requestBody = {
-    model: aiModel.value || 'gpt-3.5-turbo',
+    model: aiModel.value || 'openai',
     messages: [
       {role: 'system', content: selectedRole?.prompt || 'You are a helpful assistant'},
       {role: 'user', content: prompt}
     ],
     temperature: selectedRole?.temperature || 0.7,
-    top_p: selectedRole?.top_p || 0.8
+    top_p: selectedRole?.top_p || 0.8,
+    referrer: 'MDify'
   };
   
   const response = await fetch(settings.endpoint || 'https://text.pollinations.ai/openai', {
@@ -317,17 +355,38 @@ async function generateContent(prompt) {
     },
     body: JSON.stringify(requestBody)
   });
-  
+
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    let errorMessage = `API error: ${response.status}`;
+
+    try {
+      const data = await response.json(); // try to parse error body
+      if (data.error) {
+        errorMessage += ` - ${data.error}`;
+      }
+    } catch (e) {
+      // if response is not JSON or parsing failed
+      errorMessage += " - Unknown error";
+    }
+    throw new Error(errorMessage);
   }
-  
+
   const data = await response.json();
-  return [data.choices[0].message.content, usage.total_tokens];
+  return [data.choices[0].message.content, data.usage.total_tokens];
 }
 
+const { Editor } = toastui;
+const { chart, codeSyntaxHighlight, colorSyntax, tableMergedCell, uml } = Editor.plugin;
+
+const chartOptions = {
+  minWidth: 100,
+  maxWidth: 600,
+  minHeight: 100,
+  maxHeight: 300
+};
+
 // Initialize Toast UI Editor with RTL support and custom commands
-const editor = new toastui.Editor({
+const editor = new Editor({
     el: document.querySelector('#editor'),
     initialEditType: 'markdown',
     previewStyle: 'vertical',
@@ -335,26 +394,34 @@ const editor = new toastui.Editor({
     usageStatistics: false,
     theme: localStorage.getItem('selectedTheme') === 'dark' ? 'dark' : 'light',
     plugins: [
-        toastui.Editor.plugin.chart,
-        toastui.Editor.plugin.codeSyntaxHighlight,
-        toastui.Editor.plugin.colorSyntax,
-        toastui.Editor.plugin.tableMergedCell
+      [chart, chartOptions],
+      [codeSyntaxHighlight, { highlighter: Prism}],
+      colorSyntax,
+      tableMergedCell,
+      uml
     ],
     hooks: {
         async 'addImageBlobHook'(blob, callback) {
             // Handle image uploads
             callback('https://via.placeholder.com/150');
         }
-    },
-    customCommand: {
-        // Add custom command to insert text at cursor position
-        name: 'insertText',
-        exec: (editor, text) => {
-            const cm = editor.getCodeMirror();
-            cm.replaceSelection(text);
-        }
     }
 });
+
+editor.addCommand("markdown", "test", function additem() {
+  console.log("ButtonClicked");
+  editor.replaceSelection(" \n\n ~~-~~ ~~-~~ ~~-~~ \n\n ");
+});
+
+editor.insertToolbarItem({ groupIndex: 6, itemIndex: 0 }, {
+  name: 'myItem',
+  tooltip: 'Page Break',
+  command: 'test',
+  text: '',
+  className: 'toastui-editor-toolbar-icons page-break-command',
+  // style: { backgroundImage: 'none' }
+});
+
 let currentFileHandle = null;
 // Direction handling
 let isRTL = false;
@@ -529,6 +596,30 @@ document.getElementById('exportHtml').addEventListener('click', async () => {
         ${isRTL ? 'direction: rtl;' : ''}
     }
     pre{direction: ltr;}
+    /* 
+      Rule for the FIRST <del> in a sequence of three.
+      This is the one we will apply the special styles to.
+    */
+    del:has(+ del + del) {
+      /* This makes the element a block, which is required for page-break-after to work reliably. */
+      display: block;
+      /* The important rule for printing */
+      page-break-after: always;
+      /* These rules hide it visually without removing it from the layout, so the page break still works. */
+      height: 0;
+      visibility: hidden;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    /* 
+      Rule for the SECOND and THIRD <del> tags in the sequence.
+      We simply hide them completely.
+    */
+    del:has(+ del + del) + del,
+    del:has(+ del + del) + del + del {
+      display: none;
+    }
     </style>
 </head>
 <body>
@@ -561,9 +652,6 @@ document.getElementById('exportStyledHtml').addEventListener('click', async () =
     const now = Date.now();
     const prismCSS = await loadFile("./libs/prism.min.css");
     const tuiEditorViewer = await loadFile("./libs/toastui-editor-viewer-export.min.css");
-
-    console.log(prismCSS);
-    console.log(tuiEditorViewer);
 
     const rtlStyles = 
     `
@@ -739,4 +827,14 @@ async function loadFile(path) {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to load ${path}`);
     return await response.text();
+}
+
+function popupAlert(message) {
+  const popup = document.getElementById('aiStatus');
+  popup.textContent = message;
+  popup.style = "visibility: visible;opacity: 1";
+  setTimeout(function () {
+    popup.style = "visibility: hidden;opacity: 0";
+    popup.textContent = "";
+  }, 5000);
 }
