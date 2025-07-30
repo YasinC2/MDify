@@ -140,14 +140,19 @@ function loadSettings() {
   const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
   if (settings.provider) aiProvider.value = settings.provider;
   if (settings.endpoint) apiEndpoint.value = settings.endpoint;
+  if (settings.model) aiModel.value = settings.model;
   if (settings.key) apiKey.value = atob(settings.key); // Decode from base64
+
 }
 
 // Save settings to localStorage
 function saveSettings() {
+  // console.log("save setting");
+  
   const settings = {
     provider: aiProvider.value,
     endpoint: apiEndpoint.value,
+    model: aiModel.value,
     key: btoa(apiKey.value) // Encode to base64
   };
   localStorage.setItem('aiSettings', JSON.stringify(settings));
@@ -201,10 +206,26 @@ async function loadModels() {
 }
 
 // Event listeners for settings
-aiProvider.addEventListener('change', loadSettings);
+aiProvider.addEventListener('change', () => {
+  
+  const settings = JSON.parse(localStorage.getItem('aiSettings') || '{}');
+  if (settings.endpoint) {
+    if (aiProvider.value == 'openai') {
+      apiEndpoint.value = 'https://api.openai.com/v1';
+      aiModel.value = 'o4-mini';
+    } else {
+      apiEndpoint.value = 'https://text.pollinations.ai/openai';
+      aiModel.value = 'openai';
+    }
+  }
+  loadModels();
+  // loadSettings();
+  saveSettings();
+});
 apiEndpoint.addEventListener('change', saveSettings);
 apiKey.addEventListener('change', saveSettings);
-aiProvider.addEventListener('change', loadModels);
+aiModel.addEventListener('change', saveSettings);
+// aiProvider.addEventListener('change', loadModels);
 document.getElementById('loadModelsBtn').addEventListener('click', loadModels);
 
 // Initialize settings
