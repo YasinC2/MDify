@@ -1,11 +1,10 @@
 const CACHE_NAME = 'MDify-v1';
-const OFFLINE_PAGE = '/index.html';
+const OFFLINE_PAGE = 'index.html';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.json',
+  'index.html',
+  'styles.css',
+  'app.js',
+  'manifest.json',
   'libs/prism.min.css',
   'libs/toastui-chart.css',
   'libs/toastui-chart.js',
