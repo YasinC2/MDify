@@ -26,7 +26,7 @@
 </head>
 
 <body>
-    <div id="deviceAlert" class="device-alert">
+    <div id="deviceAlert" class="device-alert" style="display: none;">
         <p>
             This tool is optimized for desktop or large displays.
             <br>
@@ -45,9 +45,11 @@
                 </button>
                 <div class="dropdown-content">
                     <button id="newMd">New</button>
+                    <button id="openMd">Open</button>
                     <button id="saveBtn">Save</button>
                     <button id="saveAsBtn">Save As</button>
-                    <button id="importMd">Import</button>
+                    <button id="importMd">Import & Replace</button>
+                    <button id="importAppendMd">Import & Append</button>
                     <input type="file" id="fileInput" accept=".md" hidden>
                     <button id="exportMd" style="display: none;">Export MD</button>
                     <button id="exportHtml">Export HTML</button>
@@ -62,6 +64,9 @@
                     <label class="dropdown-item">
                         <input type="checkbox" id="toggleDirection"> <span>RTL Direction</span>
                     </label>
+                    <label class="dropdown-item">
+                        <input type="checkbox" id="editorTabMode"> <span>Editor Tab Mode</span>
+                    </label>
                     <hr>
                     <a href="https://github.com/YasinC2/MDify/" target="_blank" class="dropdown-item">
                         <span>MDify GitHub</span>
@@ -69,9 +74,16 @@
                     <a href="https://github.com/YasinC2/MDify/issues" target="_blank" class="dropdown-item">
                         <span>Report Issue</span>
                     </a>
+                    <hr>
+                    <p class="dropdown-item version-info">
+                        <span>Version: </span>
+                        <span id="version"></span>
+                    </p>
                 </div>
             </div>
-            <p class="alert-message" id="alert"></p>
+            <div class="alert-message-container">
+                <p class="alert-message" id="alert"></p>
+            </div>
         </div>
         <div class="toolbar-logo">
             <img src="img/MDify-badge.png" alt="" height="34px">
@@ -129,7 +141,7 @@
                             <label for="customTopP">Top P:</label>
                             <input type="number" id="customTopP" min="0" max="1" step="0.1" value="0.5" placeholder="Top P - min:0 max:1">
                         </div>
-                        
+
                         <button id="saveCustomRole">Save Role</button>
                     </div>
                 </div>
@@ -232,7 +244,7 @@
             </div>
         </div>
     </div>
-    
+
     <span class="popup-message" id="aiStatus">Test</span>
 
     <!-- <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.js"></script> -->

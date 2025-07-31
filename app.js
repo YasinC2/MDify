@@ -1,3 +1,10 @@
+const appVersion = '1.2.0';
+document.getElementById('version').textContent = appVersion;
+
+// Alert timeout
+let alertTimeout;
+let popupTimeout;
+
 // AI Assistant Modal
 const aiModal = document.getElementById('aiAssistantModal');
 const aiBtn = document.getElementById('aiAssistantBtn');
@@ -410,7 +417,7 @@ const chartOptions = {
 const editor = new Editor({
     el: document.querySelector('#editor'),
     initialEditType: 'markdown',
-    previewStyle: 'vertical',
+    previewStyle: localStorage.getItem('editorTabMode') === 'true' ? 'tab' : 'vertical',
     height: '100%',
     usageStatistics: false,
     theme: localStorage.getItem('selectedTheme') === 'dark' ? 'dark' : 'light',
@@ -434,7 +441,7 @@ editor.addCommand("markdown", "test", function additem() {
   editor.replaceSelection(" \n\n ~~-~~ ~~-~~ ~~-~~ \n\n ");
 });
 
-editor.insertToolbarItem({ groupIndex: 6, itemIndex: 0 }, {
+editor.insertToolbarItem({ groupIndex: 5, itemIndex: 0 }, {
   name: 'myItem',
   tooltip: 'Page Break',
   command: 'test',
@@ -443,15 +450,15 @@ editor.insertToolbarItem({ groupIndex: 6, itemIndex: 0 }, {
   // style: { backgroundImage: 'none' }
 });
 
-let currentFileHandle = null;
 // Direction handling
 let isRTL = false;
 const toggleDirectionBtn = document.getElementById('toggleDirection');
+const editorTabModeBtn = document.getElementById('editorTabMode');
 const toggleAutosave = document.getElementById('autosave-setting');
 
 toggleAutosave.addEventListener('change', (e) => {
   if (e.target.checked) {
-    showAlert('Autosave is enabled.');
+    showAlert('Autosave is enabled. Your changes will be saved automatically every 10 seconds.');
   } else {
     showAlert('Autosave is disabled.');
   }
@@ -464,7 +471,7 @@ function updateDirection() {
   localStorage.setItem('editorDirection', isRTL ? 'rtl' : 'ltr');
 }
 
-toggleDirectionBtn.addEventListener('click', () => {
+toggleDirectionBtn.addEventListener('change', () => {
   isRTL = !isRTL;
   updateDirection();
 });
@@ -476,6 +483,15 @@ if (savedDirection) {
   updateDirection();
   toggleDirectionBtn.checked = isRTL;
 }
+
+editorTabModeBtn.addEventListener('change', (e) => {
+  // console.log(e.target.checked);
+  localStorage.setItem('editorTabMode', e.target.checked);
+  editor.changePreviewStyle(e.target.checked ? 'tab' : 'vertical');
+});
+
+const savedEditorMode = localStorage.getItem('editorTabMode') === 'true';
+editorTabModeBtn.checked = savedEditorMode;
 
 // Save keyboard shortcut
 document.addEventListener('keydown', async (e) => {
@@ -524,6 +540,21 @@ function saveAs(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
+let currentFileHandle = null;
+
+if ('launchQueue' in window) {
+  launchQueue.setConsumer(async (launchParams) => {
+    if (!launchParams.files.length) return;
+
+    const fileHandle = launchParams.files[0];
+    const file = await fileHandle.getFile();
+    const contents = await file.text();    
+
+    editor.setMarkdown(contents); // or your editor loading method
+    currentFileHandle = fileHandle; // 🔹 Save the handle so you can save it later
+  });
+}
+
 async function saveFile() {
   try {
     if (currentFileHandle) {
@@ -548,6 +579,7 @@ async function saveAsNewFile() {
           'text/markdown': ['.md']
         },
       }],
+      excludeAcceptAllOption: true,
     });
     const writable = await handle.createWritable();
     await writable.write(editor.getMarkdown());
@@ -560,10 +592,45 @@ async function saveAsNewFile() {
     }
   }
 }
-// Export handlers
-// New file confirmation
+
+document.getElementById('openMd').addEventListener('click', async () => {
+  if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
+
+  try {
+    // Show native file picker
+    const [handle] = await window.showOpenFilePicker({
+      types: [{
+        description: 'Markdown Files',
+        accept: { 'text/markdown': ['.md'] }
+      }],
+      excludeAcceptAllOption: true,
+      multiple: false
+    });
+
+    const file = await handle.getFile();
+    const content = await file.text();
+
+    editor.setMarkdown(content);
+    currentFileHandle = handle;
+    showAlert(`Opened: ${file.name}`);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.error(err);
+      showAlert(`Failed to open file: ${err.message}`);
+    }
+  }
+});
+
+let importAndAppend = false;
 // Handle file imports
 document.getElementById('importMd').addEventListener('click', () => {
+  if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
+  importAndAppend = false;
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('importAppendMd').addEventListener('click', () => {
+  importAndAppend = true;
   document.getElementById('fileInput').click();
 });
 
@@ -573,23 +640,35 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 
   try {
     const content = await file.text();
-    editor.setMarkdown(content);
+    if (importAndAppend) {
+      editor.setMarkdown(editor.getMarkdown() + '\n' + content);
+    } else {
+      editor.setMarkdown(content);
+    }
+
     showAlert(`Imported: ${file.name}`);
+    document.getElementById('fileInput').value = '';
   } catch (err) {
     showAlert(`Import failed: ${err.message}`);
   }
 });
 
+// New file confirmation
 document.getElementById('newMd').addEventListener('click', () => {
   if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
+  document.getElementById('fileInput').value = '';
   currentFileHandle = null;
   editor.setMarkdown('');
   localStorage.removeItem('autosave');
   sessionStorage.clear();
-  location.reload(); // Force full reset
+  // sessionStorage.setItem('newFile', '1');
+  // location.href = location.href;
+  // location.reload(); // Force full reset
 });
 
 document.getElementById('saveAsBtn').addEventListener('click', saveAsNewFile);
+
+// Export handlers
 document.getElementById('exportMd').addEventListener('click', () => {
   const content = editor.getMarkdown();
   const blob = new Blob([content], {
@@ -653,6 +732,7 @@ document.getElementById('exportHtml').addEventListener('click', async () => {
         description: 'HTML Files',
         accept: {'text/html': ['.html']},
       }],
+      excludeAcceptAllOption: true,
       suggestedName: `document-${now}.html`
     });
 
@@ -744,6 +824,7 @@ right: 0;
         description: 'HTML Files',
         accept: {'text/html': ['.html']},
       }],
+      excludeAcceptAllOption: true,
       suggestedName: `document-${now}.html`
     });
 
@@ -768,8 +849,10 @@ setInterval(async () => {
       const writable = await currentFileHandle.createWritable();
       await writable.write(content);
       await writable.close();
+      // showAlert('Autosaved to current file.');
     } else {
       localStorage.setItem('autosave', content);
+      // showAlert('Autosaved to local storage.');
     }
   } catch (err) {
     showAlert(`Autosave failed: ${err.message}`);
@@ -778,9 +861,24 @@ setInterval(async () => {
 
 // Load autosaved content
 const autosave = localStorage.getItem('autosave');
-if (autosave) {
-  editor.setMarkdown(autosave);
-  showAlert('Autosaved content loaded.');
+// console.log(autosave);
+
+// On Page Load
+if (sessionStorage.getItem('newFile')) {
+  editor.setMarkdown(''); // Or skip loading from localStorage
+  sessionStorage.removeItem('newFile');
+} else {
+  if (autosave) {
+    // console.log('Autosaved content found.');
+
+    editor.setMarkdown(autosave);
+    showAlert('Autosaved content loaded.');
+    toggleAutosave.checked = true;
+  } else {
+    // console.log('No autosaved content found.');
+    toggleAutosave.checked = false;
+    editor.setMarkdown('');
+  }
 }
 
 // Handle PWA file launches
@@ -802,34 +900,21 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function showAlert(text) {
-  const alert = document.getElementById("alert");
-
-  alert.innerText = text;
-  alert.style.opacity = "1";
-
-  // Hide slowly after 3 seconds
-  setTimeout(() => {
-    alert.style.opacity = "0";
-    // Clear text after fade-out completes (500ms)
-    setTimeout(() => {
-      alert.innerText = "";
-    }, 500);
-  }, 3000);
-}
-
 // Handle device alert
 const deviceAlert = document.getElementById('deviceAlert');
 const dismissDeviceAlert = document.getElementById('dismissDeviceAlert');
 
 dismissDeviceAlert.addEventListener('click', () => {
-    deviceAlert.classList.add('hidden');
-    localStorage.setItem('dismissedDeviceAlert', 'true');
+    // deviceAlert.classList.add('hidden');
+    deviceAlert.style.display = 'none';
+    localStorage.setItem('dismissedDeviceAlert', true);
 });
 
+console.log("dismissedDeviceAlert", !localStorage.getItem('dismissedDeviceAlert'));
+
+
 // Only show alert on small screens and if not previously dismissed
-if (window.matchMedia('(max-width: 768px)').matches &&
-    !localStorage.getItem('dismissedDeviceAlert')) {
+if (window.matchMedia('(max-width: 768px)').matches && !localStorage.getItem('dismissedDeviceAlert')) {
     deviceAlert.style.display = 'flex';
 }
 
@@ -850,12 +935,45 @@ async function loadFile(path) {
     return await response.text();
 }
 
+function showAlert(text) {
+  clearTimeout(popupTimeout);
+  clearTimeout(alertTimeout);
+
+  popupAlert(text);
+  textAlert(text);
+}
+
+function textAlert(text) {
+  const alert = document.getElementById("alert");
+
+  alert.innerText = text;
+  alert.style.opacity = "1";
+
+  // Hide slowly after 3 seconds
+  alertTimeout = setTimeout(() => {
+    alert.style.opacity = "0";
+    // Clear text after fade-out completes (500ms)
+    setTimeout(() => {
+      alert.innerText = "";
+    }, 500);
+  }, 3000);
+}
+
 function popupAlert(message) {
   const popup = document.getElementById('aiStatus');
-  popup.textContent = message;
-  popup.style = "visibility: visible;opacity: 1";
-  setTimeout(function () {
-    popup.style = "visibility: hidden;opacity: 0";
-    popup.textContent = "";
-  }, 5000);
+
+  popup.innerText = message;
+
+  // popup.style = "visibility: visible;opacity: 1";
+  popup.style.visibility = "visible";
+  popup.style.opacity = "1";
+  popupTimeout = setTimeout(function () {
+    // popup.style = "visibility: hidden;opacity: 0";
+    popup.style.visibility = "hidden";
+    popup.style.opacity = "0";
+    // Clear text after fade-out completes (500ms)
+    setTimeout(() => {
+      popup.innerText = "";
+    }, 500);
+  }, 3000);
 }

@@ -97,7 +97,8 @@ MDify utilizes several open-source resources:
 
 - [ToastUI Editor](https://ui.toast.com/tui-editor) - Markdown editor component
 - [Prism.js](https://prismjs.com/) - Syntax highlighting
-- [Vazirmatn](https://github.com/rastikerdar/vazirmatn) - Persian/Arabic font
+- [Vazirmatn Font](https://github.com/rastikerdar/vazirmatn) - Persian/Arabic font
+- [Vazir Code Font](https://github.com/rastikerdar/vazir-code-font) - Persian monospaced font
 
 We're grateful to the creators of these projects.
 

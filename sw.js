@@ -1,4 +1,4 @@
-const CACHE_NAME = 'MDify-v1';
+const CACHE_NAME = 'MDify-v2';
 const OFFLINE_PAGE = 'index.html';
 const ASSETS = [
   'index.html',
