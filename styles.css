@@ -295,6 +295,7 @@ button:not(.toastui-editor-toolbar-icons):hover {
 .dropdown {
     position: relative;
     display: inline-block;
+    z-index: 100;
 }
 
 .dropbtn {
@@ -339,6 +340,7 @@ button:not(.toastui-editor-toolbar-icons):hover {
     direction: ltr;
     text-align: left;
     border-radius: 0;
+    line-height: 1.4;
 }
 
 .dropdown-content button:hover,

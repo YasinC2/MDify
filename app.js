@@ -1,4 +1,4 @@
-const appVersion = '1.2.0';
+const appVersion = '1.2.3';
 document.getElementById('version').textContent = appVersion;
 
 // Alert timeout
@@ -1032,7 +1032,7 @@ dismissDeviceAlert.addEventListener('click', () => {
     localStorage.setItem('dismissedDeviceAlert', true);
 });
 
-console.log("dismissedDeviceAlert", !localStorage.getItem('dismissedDeviceAlert'));
+// console.log("dismissedDeviceAlert", !localStorage.getItem('dismissedDeviceAlert'));
 
 
 // Only show alert on small screens and if not previously dismissed
