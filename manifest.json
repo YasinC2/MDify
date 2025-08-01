@@ -2,12 +2,12 @@
   "name": "MDify",
   "short_name": "MDify",
   "description": "Progressive Web App for Markdown editing with RTL support",
-  "start_url": "./",
+  "start_url": "/MDify/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2b1100ff",
-  "icons": [
-    {
+  "theme_color": "#2b1100",
+  "icons": [{
       "src": "img/MDify-192.png",
       "sizes": "192x192",
       "type": "image/png"
@@ -18,16 +18,33 @@
       "type": "image/png"
     }
   ],
-  "file_handlers": [
-    {
-      "action": "./",
-      "accept": {
-        "text/markdown": [".md"]
-      },
-      "launch_type": "single-client"
-    }
+  "file_handlers": [{
+    "action": "./",
+    "accept": {
+      "text/markdown": [".md"]
+    },
+    "launch_type": "single-client"
+  }],
+  "lang": "en",
+  "dir": "auto",
+  "categories": [
+    "Document",
+    "Markdown Editor",
+    "Text Editor"
   ],
   "orientation": "any",
   "related_applications": [],
-  "screenshots": []
+  "screenshots": [{
+      "src": "img/screenshot-desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "img/screenshot-mobile.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
 }
