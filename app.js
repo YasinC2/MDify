@@ -1,4 +1,4 @@
-const appVersion = '1.2.31';
+const appVersion = '1.2.32';
 document.getElementById('version').textContent = appVersion;
 
 // Alert timeout
@@ -538,7 +538,7 @@ const chartOptions = {
 // Initialize Toast UI Editor with RTL support and custom commands
 const editor = new Editor({
     el: document.querySelector('#editor'),
-    initialEditType: 'markdown',
+    initialEditType: window.matchMedia('(max-width: 768px)').matches ? 'wysiwyg' : 'markdown',
     previewStyle: localStorage.getItem('editorTabMode') === 'true' ? 'tab' : 'vertical',
     height: '100%',
     usageStatistics: false,
@@ -694,6 +694,7 @@ async function saveFile() {
 
 async function saveAsNewFile() {
   try {
+    const now = Date.now();
     const handle = await window.showSaveFilePicker({
       types: [{
         description: 'Markdown Files',
@@ -702,6 +703,7 @@ async function saveAsNewFile() {
         },
       }],
       excludeAcceptAllOption: true,
+      suggestedName: `document-${now}.md`
     });
     const writable = await handle.createWritable();
     await writable.write(editor.getMarkdown());

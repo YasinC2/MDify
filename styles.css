@@ -18,6 +18,7 @@
     --font-size-small: 14px;
 }
 
+[data-theme="dark"] body,
 [data-theme="dark"] .toolbar,
 [data-theme="dark"] .modal {
     --bg-color: #1a1a1a;
@@ -99,6 +100,10 @@ input {
 .toastui-editor-defaultUI,
 .toastui-editor-defaultUI-toolbar {
     border: 0 !important;
+    border-radius: 0 !important;
+}
+
+.toastui-editor-mode-switch {
     border-radius: 0 !important;
 }
 
@@ -211,7 +216,7 @@ button:not(.toastui-editor-toolbar-icons):hover {
 }
 
 .toastui-editor-toolbar-group .toastui-editor-dropdown-toolbar {
-    max-width: 97%;
+    max-width: 95%;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none; /* Hides the scrollbar in Firefox */
@@ -724,5 +729,9 @@ del:has(+ del + del)+del+del {
 
     .alert-message {
         display: none;
+    }
+
+    .toastui-editor-tooltip {
+        display: none !important;
     }
 }
