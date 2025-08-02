@@ -43,6 +43,7 @@
 /* Handle */
 ::-webkit-scrollbar-thumb {
     background: #888;
+    cursor: grab;
 }
 
 /* Handle on hover */
@@ -723,6 +724,10 @@ del:has(+ del + del)+del+del {
 
 
 @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+        width: 4px;
+    }
+
     .device-alert {
         display: flex;
     }

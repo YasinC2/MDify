@@ -1,4 +1,4 @@
-const appVersion = '1.2.32';
+const appVersion = '1.2.33';
 document.getElementById('version').textContent = appVersion;
 
 // Alert timeout
@@ -538,8 +538,8 @@ const chartOptions = {
 // Initialize Toast UI Editor with RTL support and custom commands
 const editor = new Editor({
     el: document.querySelector('#editor'),
-    initialEditType: window.matchMedia('(max-width: 768px)').matches ? 'wysiwyg' : 'markdown',
-    previewStyle: localStorage.getItem('editorTabMode') === 'true' ? 'tab' : 'vertical',
+    initialEditType: localStorage.getItem('WYSIWYGMode') === 'true' ? 'wysiwyg' : 'markdown',
+    previewStyle: localStorage.getItem('editorTabMode') === 'true' || window.matchMedia('(max-width: 768px)').matches ? 'tab' : 'vertical',
     height: '100%',
     usageStatistics: false,
     theme: localStorage.getItem('selectedTheme') === 'dark' ? 'dark' : 'light',
@@ -576,6 +576,7 @@ editor.insertToolbarItem({ groupIndex: 5, itemIndex: 0 }, {
 let isRTL = false;
 const toggleDirectionBtn = document.getElementById('toggleDirection');
 const editorTabModeBtn = document.getElementById('editorTabMode');
+const WYSIWYGModeBtn = document.getElementById('WYSIWYGMode');
 const toggleAutosave = document.getElementById('autosave-setting');
 
 toggleAutosave.addEventListener('change', (e) => {
@@ -612,8 +613,17 @@ editorTabModeBtn.addEventListener('change', (e) => {
   editor.changePreviewStyle(e.target.checked ? 'tab' : 'vertical');
 });
 
-const savedEditorMode = localStorage.getItem('editorTabMode') === 'true';
+WYSIWYGModeBtn.addEventListener('change', (e) => {
+  // console.log(e.target.checked);
+  localStorage.setItem('WYSIWYGMode', e.target.checked);
+  editor.changeMode(e.target.checked ? 'wysiwyg' : 'markdown');
+});
+
+const savedEditorMode = localStorage.getItem('editorTabMode') === 'true' || window.matchMedia('(max-width: 768px)').matches;
 editorTabModeBtn.checked = savedEditorMode;
+
+const savedWYSIWYGModeAsDefault = localStorage.getItem('WYSIWYGMode') === 'true';
+WYSIWYGModeBtn.checked = savedWYSIWYGModeAsDefault;
 
 // Save keyboard shortcut
 document.addEventListener('keydown', async (e) => {
@@ -699,17 +709,30 @@ async function saveAsNewFile() {
       types: [{
         description: 'Markdown Files',
         accept: {
-          'text/markdown': ['.md']
+          'text/markdown': ['.md'],
+          'text/plain': ['.txt'],
         },
       }],
       excludeAcceptAllOption: true,
       suggestedName: `document-${now}.md`
     });
+
     const writable = await handle.createWritable();
     await writable.write(editor.getMarkdown());
     await writable.close();
     currentFileHandle = handle;
-    showAlert('File saved successfully');
+
+
+    // Patch: Check if the file name has the proper extension
+    const fileName = handle.name || '';
+    console.log(fileName);
+
+    if (!fileName.toLowerCase().endsWith('.md') && !fileName.toLowerCase().endsWith('.txt') && !fileName.toLowerCase().endsWith('.text')) {
+      showAlert('File saved successfully \nWarning: File extension is missing. The file may not be recognized as Markdown.');
+    }
+    else {
+      showAlert('File saved successfully');
+    }
   } catch (err) {
     if (err.name !== 'AbortError') {
       showAlert(`Save failed: ${err.message}`);
@@ -725,7 +748,10 @@ document.getElementById('openMd').addEventListener('click', async () => {
     const [handle] = await window.showOpenFilePicker({
       types: [{
         description: 'Markdown Files',
-        accept: { 'text/markdown': ['.md'] }
+        accept: { 
+          'text/markdown': ['.md'],
+          'text/plain': ['.txt'],
+        }
       }],
       excludeAcceptAllOption: true,
       multiple: false
@@ -1024,23 +1050,23 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Handle device alert
-const deviceAlert = document.getElementById('deviceAlert');
-const dismissDeviceAlert = document.getElementById('dismissDeviceAlert');
+// // Handle device alert
+// const deviceAlert = document.getElementById('deviceAlert');
+// const dismissDeviceAlert = document.getElementById('dismissDeviceAlert');
 
-dismissDeviceAlert.addEventListener('click', () => {
-    // deviceAlert.classList.add('hidden');
-    deviceAlert.style.display = 'none';
-    localStorage.setItem('dismissedDeviceAlert', true);
-});
+// dismissDeviceAlert.addEventListener('click', () => {
+//     // deviceAlert.classList.add('hidden');
+//     deviceAlert.style.display = 'none';
+//     localStorage.setItem('dismissedDeviceAlert', true);
+// });
 
 // console.log("dismissedDeviceAlert", !localStorage.getItem('dismissedDeviceAlert'));
 
 
 // Only show alert on small screens and if not previously dismissed
-if (window.matchMedia('(max-width: 768px)').matches && !localStorage.getItem('dismissedDeviceAlert')) {
-    deviceAlert.style.display = 'flex';
-}
+// if (window.matchMedia('(max-width: 768px)').matches && !localStorage.getItem('dismissedDeviceAlert')) {
+//     deviceAlert.style.display = 'flex';
+// }
 
 // // Add event listener for custom command
 // document.addEventListener('keydown', (e) => {
@@ -1099,5 +1125,5 @@ function popupAlert(message) {
     setTimeout(() => {
       popup.innerText = "";
     }, 500);
-  }, 3000);
+  }, 4000);
 }
