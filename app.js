@@ -1,4 +1,4 @@
-const appVersion = '1.2.33';
+const appVersion = '1.2.4';
 document.getElementById('version').textContent = appVersion;
 
 // Alert timeout
@@ -540,6 +540,7 @@ const editor = new Editor({
     el: document.querySelector('#editor'),
     initialEditType: localStorage.getItem('WYSIWYGMode') === 'true' ? 'wysiwyg' : 'markdown',
     previewStyle: localStorage.getItem('editorTabMode') === 'true' || window.matchMedia('(max-width: 768px)').matches ? 'tab' : 'vertical',
+    autofocus: false, // Set this to false to disable auto-focus
     height: '100%',
     usageStatistics: false,
     theme: localStorage.getItem('selectedTheme') === 'dark' ? 'dark' : 'light',
@@ -704,7 +705,7 @@ async function saveFile() {
 
 async function saveAsNewFile() {
   try {
-    const now = Date.now();
+    const suggestedName = extractSafeFilenameFromContent();
     const handle = await window.showSaveFilePicker({
       types: [{
         description: 'Markdown Files',
@@ -714,7 +715,7 @@ async function saveAsNewFile() {
         },
       }],
       excludeAcceptAllOption: true,
-      suggestedName: `document-${now}.md`
+      suggestedName: suggestedName
     });
 
     const writable = await handle.createWritable();
@@ -830,7 +831,7 @@ document.getElementById('exportMd').addEventListener('click', () => {
 document.getElementById('exportHtml').addEventListener('click', async () => {
   try {
     const content = editor.getHTML();
-    const now = Date.now();
+    const suggestedName = extractSafeFilenameFromContent('html');
 
     const html = `
 <!DOCTYPE html>
@@ -838,7 +839,7 @@ document.getElementById('exportHtml').addEventListener('click', async () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>document-${now}</title>
+    <title>${suggestedName}</title>
     <style>
     @import url("https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css");
     body {
@@ -883,7 +884,7 @@ document.getElementById('exportHtml').addEventListener('click', async () => {
         accept: {'text/html': ['.html']},
       }],
       excludeAcceptAllOption: true,
-      suggestedName: `document-${now}.html`
+      suggestedName: suggestedName
     });
 
     const writable = await handle.createWritable();
@@ -900,7 +901,7 @@ document.getElementById('exportHtml').addEventListener('click', async () => {
 document.getElementById('exportStyledHtml').addEventListener('click', async () => {
   try {
     const content = editor.getHTML();
-    const now = Date.now();
+    const suggestedName = extractSafeFilenameFromContent('html');
     const prismCSS = await loadFile("./libs/prism.min.css");
     const tuiEditorViewer = await loadFile("./libs/toastui-editor-viewer-export.min.css");
 
@@ -924,7 +925,7 @@ right: 0;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>document-${now}</title>
+    <title>${suggestedName}</title>
     <style>
     @import url("https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css");
     body {
@@ -975,7 +976,7 @@ right: 0;
         accept: {'text/html': ['.html']},
       }],
       excludeAcceptAllOption: true,
-      suggestedName: `document-${now}.html`
+      suggestedName: suggestedName
     });
 
     const writable = await handle.createWritable();
@@ -1126,4 +1127,33 @@ function popupAlert(message) {
       popup.innerText = "";
     }, 500);
   }, 4000);
+}
+
+function extractSafeFilenameFromContent(type = 'md') {
+  const maxWords = 8;
+  const maxLength = 50;
+  const now = Date.now();
+  const content = editor.getMarkdown().trim();
+  const firstLine = content
+    .split('\n')
+    .find(line => line.trim().length > 0) || 'document';
+
+  // Remove Markdown characters and invalid filename characters
+  let clean = firstLine
+    .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
+    .replace(/^#+\s*/, '') // Remove Markdown headers
+    .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
+    .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
+    .trim();
+
+  // Limit to a few words
+  const words = clean.split(/\s+/).slice(0, maxWords);
+  clean = words.join('-');
+
+  // Limit total length
+  if (clean.length > maxLength) {
+    clean = clean.substring(0, maxLength).replace(/-+$/, '');
+  }
+
+  return `${clean || 'document'}-${now}.${type}`;
 }
