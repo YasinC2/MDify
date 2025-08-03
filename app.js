@@ -706,10 +706,10 @@ async function saveFile() {
     const nameChanged = openedFileName !== fileNameInput.value;
 
     if (nameChanged) {
-      console.log("File name has changed:", openedFileName, "->", fileNameInput.value);
+      // console.log("File name has changed:", openedFileName, "->", fileNameInput.value);
       const confirmSaveAs = confirm(
-        "File name has changed. Do you want to save as a new file?\n" +
-        "Files cannot be renamed directly from the browser. Please rename manually after saving."
+        "File name has changed. Do you want to save it as a new file?\n\n" +
+        "Note: Files cannot be renamed directly from the browser. Please rename manually after saving, through your system's file manager."
       );
       if (confirmSaveAs) {
         await saveAsNewFile();
@@ -1226,7 +1226,7 @@ function setFileNameValue(fileName) {
   function cleanFileName(name) {
     return name.replace('--', '-').replace(/([\d\w\D\W])-([\d\w\D\W])/g, '$1 $2').replace(".md", "").replace(".txt", "").replace(".text", "").trim();
   }
-  console.log("---> " + fileName);
+  // console.log("---> " + fileName);
   
   fileName = cleanFileName(fileName);
   openedFileName = fileName;
