@@ -12,6 +12,7 @@
     --text-color: #2c3e50;
     --text-color-note: #8b9cad;
     --toolbar-bg: #f8f9fa;
+    --toolbar-bottom-bg: #f3f5f7;
     --border-color: #dee2e6;
     --font-body: 'Vazirmatn', Tahoma, Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif;
     --font-code: Vazircode, Consolas, Courier, monospace;
@@ -26,6 +27,7 @@
     --text-color: #f8f9fa;
     --text-color-note: #8b9cad;
     --toolbar-bg: #2d2d2d;
+    --toolbar-bottom-bg: #292929;
     --border-color: #404040;
 }
 
@@ -108,13 +110,54 @@ input {
     border-radius: 0 !important;
 }
 
-.toolbar {
+/* .toolbar { */
+/* display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--border-color); */
+/* } */
+
+.toolbar .toolbar-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
+    padding: 0.4rem;
     background: var(--toolbar-bg);
     border-bottom: 1px solid var(--border-color);
+}
+
+.toolbar .toolbar-bottom {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    /* padding: 0.5rem; */
+    background: var(--toolbar-bottom-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.toolbar .toolbar-bottom .file-name {
+    font-weight: bold;
+    position: relative;
+    top: 2px;
+    font-size: 14px;
+    padding-left: 5px;
+    background-color: transparent;
+    border: 0;
+    /* border: 1px solid red; */
+    outline: none;
+    color: var(--text-color);
+    padding: 0.3rem;
+    display: block;
+    width: 100%;
+    font-family: var(--font-body);
+}
+
+.toolbar .toolbar-bottom svg {
+    margin-left: 12px;
+    margin-right: 5px;
+    /* padding: 1px; */
 }
 
 .toolbar-logo,
@@ -134,6 +177,10 @@ input {
 .center-title {
     font-size: 1.25rem;
     font-weight: bold;
+}
+
+.toolbar-logo {
+    flex-direction: column;
 }
 
 .editor-container {
@@ -220,8 +267,10 @@ button:not(.toastui-editor-toolbar-icons):hover {
     max-width: 95%;
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: none; /* Hides the scrollbar in Firefox */
-    -ms-overflow-style: none; /* Hides the scrollbar in IE/older Edge */
+    scrollbar-width: none;
+    /* Hides the scrollbar in Firefox */
+    -ms-overflow-style: none;
+    /* Hides the scrollbar in IE/older Edge */
 }
 
 .toastui-editor-toolbar-group .toastui-editor-dropdown-toolbar::-webkit-scrollbar {
@@ -393,6 +442,7 @@ button:not(.toastui-editor-toolbar-icons):hover {
 #aiAssistantBtn {
     display: flex;
     gap: 6px;
+    padding: 8px 12px;
 }
 
 .toastui-editor-md-code-block-line-background,
@@ -722,6 +772,34 @@ del:has(+ del + del)+del+del {
     -moz-user-select: none;
 }
 
+.footer-buttons {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    gap: 0;
+    /* direction: ltr; */
+}
+
+.footer-buttons button {
+    font-size: 12px;
+    height: 28px;
+    width: 96px;
+    padding: 0px;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.footer-buttons button:hover {
+    background-color: var(--primary-color-hover);
+}
+
+[dir="rtl"] .footer-buttons button svg {
+    transform: scale(-1, 1);
+}
 
 @media (max-width: 768px) {
     ::-webkit-scrollbar {
@@ -738,5 +816,9 @@ del:has(+ del + del)+del+del {
 
     .toastui-editor-tooltip {
         display: none !important;
+    }
+
+    #aiAssistantBtn span {
+        display: none;
     }
 }

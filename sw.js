@@ -1,4 +1,4 @@
-const CACHE_NAME = 'MDify-v1.2.4';
+const CACHE_NAME = 'MDify-v1.2.5';
 const OFFLINE_PAGE = 'index.html';
 const ASSETS = [
   'index.html',
@@ -32,6 +32,7 @@ const ASSETS = [
   'font/Vazirmatn-Medium.woff2',
   'font/Vazirmatn-Black.woff2',
   'font/vazirmatn-font-face.css',
+  'img/MDify-badge.png',
   'img/MDify-192.png',
   'img/MDify-512.png'
 ];

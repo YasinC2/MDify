@@ -1,4 +1,4 @@
-const appVersion = '1.2.4';
+const appVersion = '1.2.5';
 document.getElementById('version').textContent = appVersion;
 
 // Alert timeout
@@ -525,6 +525,10 @@ async function generateContent(prompt) {
   return [data.choices[0].message.content, data.usage.total_tokens];
 }
 
+///////////////////////////////////////////////////////
+/////////////////////////////////////////////////////// End of AI Codes
+///////////////////////////////////////////////////////
+
 const { Editor } = toastui;
 const { chart, codeSyntaxHighlight, colorSyntax, tableMergedCell, uml } = Editor.plugin;
 
@@ -579,6 +583,10 @@ const toggleDirectionBtn = document.getElementById('toggleDirection');
 const editorTabModeBtn = document.getElementById('editorTabMode');
 const WYSIWYGModeBtn = document.getElementById('WYSIWYGMode');
 const toggleAutosave = document.getElementById('autosave-setting');
+
+// File Name
+const fileNameInput = document.getElementById('fileName');
+let openedFileName = '';
 
 toggleAutosave.addEventListener('change', (e) => {
   if (e.target.checked) {
@@ -690,14 +698,31 @@ if ('launchQueue' in window) {
 
 async function saveFile() {
   try {
-    if (currentFileHandle) {
-      const writable = await currentFileHandle.createWritable();
-      await writable.write(editor.getMarkdown());
-      await writable.close();
-      showAlert('File saved successfully');
-    } else {
+    if (!currentFileHandle) {
       await saveAsNewFile();
+      return;
     }
+
+    const nameChanged = openedFileName !== fileNameInput.value;
+
+    if (nameChanged) {
+      console.log("File name has changed:", openedFileName, "->", fileNameInput.value);
+      const confirmSaveAs = confirm(
+        "File name has changed. Do you want to save as a new file?\n" +
+        "Files cannot be renamed directly from the browser. Please rename manually after saving."
+      );
+      if (confirmSaveAs) {
+        await saveAsNewFile();
+        return;
+      }
+      // Revert filename input to original
+      fileNameInput.value = openedFileName;
+    }
+
+    const writable = await currentFileHandle.createWritable();
+    await writable.write(editor.getMarkdown());
+    await writable.close();
+    showAlert('File saved successfully');
   } catch (err) {
     showAlert(`Save failed: ${err.message}`);
   }
@@ -726,7 +751,10 @@ async function saveAsNewFile() {
 
     // Patch: Check if the file name has the proper extension
     const fileName = handle.name || '';
-    console.log(fileName);
+    // console.log(fileName);
+    // document.title = "MDify | " + fileName.toUpperCase();
+    
+    setFileNameValue(fileName);
 
     if (!fileName.toLowerCase().endsWith('.md') && !fileName.toLowerCase().endsWith('.txt') && !fileName.toLowerCase().endsWith('.text')) {
       showAlert('File saved successfully \nWarning: File extension is missing. The file may not be recognized as Markdown.');
@@ -760,10 +788,16 @@ document.getElementById('openMd').addEventListener('click', async () => {
 
     const file = await handle.getFile();
     const content = await file.text();
-
     editor.setMarkdown(content);
     currentFileHandle = handle;
     showAlert(`Opened: ${file.name}`);
+    localStorage.removeItem('autosave');
+    // document.title = "MDify | " + file.name.toUpperCase();
+    
+    setFileNameValue(file.name);
+    setTimeout(async () => {
+      await saveFile();
+    }, 2000);
   } catch (err) {
     if (err.name !== 'AbortError') {
       console.error(err);
@@ -812,11 +846,14 @@ document.getElementById('newMd').addEventListener('click', () => {
   editor.setMarkdown('');
   localStorage.removeItem('autosave');
   sessionStorage.clear();
+  // document.title = "MDify | New Document";
   // sessionStorage.setItem('newFile', '1');
   // location.href = location.href;
   // location.reload(); // Force full reset
 });
 
+
+document.getElementById('saveBtn').addEventListener('click', saveFile);
 document.getElementById('saveAsBtn').addEventListener('click', saveAsNewFile);
 
 // Export handlers
@@ -990,7 +1027,6 @@ right: 0;
   }
 });
 
-document.getElementById('saveBtn').addEventListener('click', saveFile);
 // Autosave functionality
 setInterval(async () => {
   if (!toggleAutosave.checked) return;
@@ -1049,6 +1085,16 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+});
+
+// Undo button action
+document.getElementById('editor-undo').addEventListener('click', () => {
+  editor.exec('undo');
+});
+
+// Redo button action
+document.getElementById('editor-redo').addEventListener('click', () => {
+  editor.exec('redo');
 });
 
 // // Handle device alert
@@ -1130,21 +1176,34 @@ function popupAlert(message) {
 }
 
 function extractSafeFilenameFromContent(type = 'md') {
-  const maxWords = 8;
-  const maxLength = 50;
+  const maxWords = 12;
+  const maxLength = 85;
   const now = Date.now();
-  const content = editor.getMarkdown().trim();
-  const firstLine = content
-    .split('\n')
-    .find(line => line.trim().length > 0) || 'document';
+  let clean;
+  let fileNameInputValue = fileNameInput.value.trim();
 
-  // Remove Markdown characters and invalid filename characters
-  let clean = firstLine
-    .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
-    .replace(/^#+\s*/, '') // Remove Markdown headers
-    .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
-    .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
-    .trim();
+  if (fileNameInputValue != "" && fileNameInputValue != "Untitled Document") {
+    // Remove Markdown characters and invalid filename characters
+    clean = fileNameInputValue
+      .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
+      .replace(/^#+\s*/, '') // Remove Markdown headers
+      .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
+      .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
+      .trim();
+  } else {
+    const content = editor.getMarkdown().trim();
+    const firstLine = content
+      .split('\n')
+      .find(line => line.trim().length > 0) || 'Untitled Document';
+
+    // Remove Markdown characters and invalid filename characters
+    clean = firstLine
+      .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
+      .replace(/^#+\s*/, '') // Remove Markdown headers
+      .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
+      .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
+      .trim();
+  }
 
   // Limit to a few words
   const words = clean.split(/\s+/).slice(0, maxWords);
@@ -1155,5 +1214,21 @@ function extractSafeFilenameFromContent(type = 'md') {
     clean = clean.substring(0, maxLength).replace(/-+$/, '');
   }
 
-  return `${clean || 'document'}-${now}.${type}`;
+  if (clean == 'Untitled-Document') {
+    clean = clean + '-' + now;
+  }
+  // console.log(clean);
+
+  return `${clean}.${type}`;
+}
+
+function setFileNameValue(fileName) {
+  function cleanFileName(name) {
+    return name.replace('--', '-').replace(/([\d\w\D\W])-([\d\w\D\W])/g, '$1 $2').replace(".md", "").replace(".txt", "").replace(".text", "").trim();
+  }
+  console.log("---> " + fileName);
+  
+  fileName = cleanFileName(fileName);
+  openedFileName = fileName;
+  fileNameInput.value = fileName.trim();
 }
