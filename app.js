@@ -1,4 +1,4 @@
-const appVersion = '1.2.6';
+const appVersion = '1.2.7';
 document.getElementById('version').textContent = appVersion;
 
 // Alert timeout
@@ -707,6 +707,7 @@ if ('launchQueue' in window) {
   });
 }
 
+let lastSavedContent = '';
 async function saveFile() {
   try {
     if (!currentFileHandle) {
@@ -734,6 +735,7 @@ async function saveFile() {
     await writable.write(editor.getMarkdown());
     await writable.close();
     showAlert('File saved successfully');
+    lastSavedContent = editor.getMarkdown();
   } catch (err) {
     showAlert(`Save failed: ${err.message}`);
   }
@@ -773,12 +775,27 @@ async function saveAsNewFile() {
     else {
       showAlert('File saved successfully');
     }
+    
+    lastSavedContent = editor.getMarkdown();
   } catch (err) {
     if (err.name !== 'AbortError') {
       showAlert(`Save failed: ${err.message}`);
     }
   }
 }
+
+// The event listener for closing the window/tab
+window.addEventListener('beforeunload', (event) => {
+  const comparedContent = editor.getMarkdown().trim() === lastSavedContent.trim();
+  const isDirty = !comparedContent;
+  
+  if (!isDirty) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = ''; 
+});
 
 document.getElementById('openMd').addEventListener('click', async () => {
   if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
@@ -1052,6 +1069,8 @@ setInterval(async () => {
       localStorage.setItem('autosave', content);
       // showAlert('Autosaved to local storage.');
     }
+    
+    lastSavedContent = editor.getMarkdown();
   } catch (err) {
     showAlert(`Autosave failed: ${err.message}`);
   }
