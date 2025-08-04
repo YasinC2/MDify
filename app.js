@@ -1,5 +1,89 @@
-const appVersion = '1.2.7';
+const appVersion = '1.2.8';
 document.getElementById('version').textContent = appVersion;
+
+
+function detectLanguageByScript(text) {
+  // Map of language codes to their Unicode script regex
+  const languageScripts = {
+    // --- Unique & Highly Distinct Scripts ---
+
+    // CJK (Chinese, Japanese, Korean)
+    // Note: These scripts overlap. Detection is a best guess.
+    'ja': /[\u3040-\u309F\u30A0-\u30FF]/, // Japanese (Hiragana, Katakana) - Most specific
+    'ko': /[\uAC00-\uD7AF]/, // Korean (Hangul Syllables) - Very specific
+    'zh': /[\u4E00-\u9FFF]/, // Chinese (Hanzi) - Also covers Japanese Kanji, so less specific on its own
+
+    // Middle Eastern Scripts
+    'fa': /[\u0600-\u06FF]/, // Persian (uses Arabic script)
+    'ar': /[\u0600-\u06FF]/, // Arabic (shares script with Persian) - a good starting point
+    'he': /[\u0590-\u05FF]/, // Hebrew
+
+    // South & Southeast Asian Scripts
+    'hi': /[\u0900-\u097F]/, // Hindi (Devanagari)
+    'bn': /[\u0980-\u09FF]/, // Bengali
+    'ta': /[\u0B80-\u0BFF]/, // Tamil
+    'te': /[\u0C00-\u0C7F]/, // Telugu
+    'th': /[\u0E00-\u0E7F]/, // Thai
+    'lo': /[\u0E80-\u0EFF]/, // Lao
+    'my': /[\u1000-\u109F]/, // Burmese (Myanmar)
+
+    // European Scripts (Non-Latin)
+    'ru': /[\u0400-\u04FF]/, // Russian (Cyrillic)
+    'el': /[\u0370-\u03FF]/, // Greek
+
+    // Other Distinct Scripts
+    'ka': /[\u10A0-\u10FF]/, // Georgian
+    'am': /[\u1200-\u137F]/, // Amharic (Ethiopic)
+    'hy': /[\u0530-\u058F]/, // Armenian
+  };
+
+  for (const langCode in languageScripts) {
+    if (languageScripts[langCode].test(text)) {
+      return langCode;
+    }
+  }
+
+  // If no specific script is found, it's likely Latin-based or unknown
+  return null;
+}
+
+// A simple debounce function to avoid running on every single keystroke
+function debounce(func, delay) {
+  let timeoutId;
+  return function (...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+function testLog(log) {
+  const isEnable = false;
+  if (isEnable) {
+    document.getElementById('testLog').textContent = log.trim();
+  }
+}
+
+const detectAndSetLanguage = debounce(() => {
+  const editorContentElem = document.querySelector('.toastui-editor [contenteditable="true"]');
+  // Get the first 50 characters to make detection fast
+  const sampleText = editor.getMarkdown().substring(0, 50);
+  if (!sampleText) return;
+
+  const detectedLang = detectLanguageByScript(sampleText);
+
+  if (detectedLang) {
+    console.log(`Detected language: ${detectedLang}`);
+    testLog(`Detected language: ${detectedLang}`)
+    // editor.lang = detectedLang;
+    editorContentElem.lang = detectedLang;
+  } else {
+    // If no unique script is detected, you might fall back to English or remove the lang attribute
+    editorContentElem.lang = 'en';
+    console.log('No unique script detected, defaulting to English.');
+    testLog('No unique script detected, defaulting to English.');
+  }
+}, 3000); // Wait 1 second after user stops typing
+
 
 // Alert timeout
 let alertTimeout;
@@ -529,6 +613,8 @@ async function generateContent(prompt) {
 /////////////////////////////////////////////////////// End of AI Codes
 ///////////////////////////////////////////////////////
 
+const toggleDisableSpellCheck = document.getElementById('disableSpellCheck');
+
 const { Editor } = toastui;
 const { chart, codeSyntaxHighlight, colorSyntax, tableMergedCell, uml } = Editor.plugin;
 
@@ -561,7 +647,16 @@ const editor = new Editor({
             callback('https://via.placeholder.com/150');
         }
     },
-    // events: {
+    events: {
+      // load: () => {
+      //   console.log('Editor loaded');
+      // },
+      change: () => {
+        // console.log('Editor changed');
+        if(!toggleDisableSpellCheck.checked) {
+          detectAndSetLanguage();
+        }
+      },
     //   focus: () => {
     //     document.body.classList.add('editor-focused');
     //     console.log('Editor focused');
@@ -570,7 +665,7 @@ const editor = new Editor({
     //     document.body.classList.remove('editor-focused');
     //     console.log('Editor blurred');
     //   }
-    // }
+    }
 });
 
 editor.addCommand("markdown", "test", function additem() {
@@ -586,6 +681,25 @@ editor.insertToolbarItem({ groupIndex: 5, itemIndex: 0 }, {
   className: 'toastui-editor-toolbar-icons page-break-command',
   // style: { backgroundImage: 'none' }
 });
+
+function disableSpellCheck() {
+  const editorContentElem = document.querySelector('.toastui-editor [contenteditable="true"]');
+  if(toggleDisableSpellCheck.checked) {
+    console.log("spellcheck disabled!");
+    editorContentElem.spellcheck = false;
+  } else {
+    editorContentElem.spellcheck = true;
+  }
+
+}
+
+toggleDisableSpellCheck.addEventListener('change', (e) => {
+  disableSpellCheck();
+  localStorage.setItem('disableSpellCheck', e.target.checked);
+});
+
+const savedDisableSpellCheck = localStorage.getItem('disableSpellCheck') === 'true';
+toggleDisableSpellCheck.checked = savedDisableSpellCheck;
 
 // Direction handling
 let isRTL = false;
@@ -1115,6 +1229,9 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  setTimeout(() => {
+    disableSpellCheck();
+  }, 2000);
 });
 
 // Undo button action
