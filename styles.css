@@ -53,44 +53,24 @@
     background: #555;
 }
 
+html,
+body {
+    height: 100vh;
+    height: -webkit-fill-available;
+    height: 100svh;
+    /* overflow: hidden !important; */
+    overscroll-behavior: none;
+}
+
 body {
     margin: 0;
     padding: 0;
-    height: 100vh;
     display: flex;
     flex-direction: column;
     font-family: var(--font-body);
     background: var(--bg-color);
     color: var(--text-color);
-}
-
-.device-alert {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background-color: #ff9800;
-    color: white;
-    padding: 10px;
-    text-align: center;
-    z-index: 2000;
-    flex-direction: column;
-    align-items: center;
-}
-
-.device-alert p {
-    margin: 0 0 10px 0;
-    max-width: 600px;
-}
-
-.device-alert button {
-    background-color: rgba(255, 255, 255, 0.2);
-    border: 1px solid white;
-    color: white;
-    padding: 5px 15px;
-    border-radius: 4px;
-    cursor: pointer;
+    position: relative;
 }
 
 select,
@@ -778,6 +758,7 @@ del:has(+ del + del)+del+del {
     left: 0;
     display: flex;
     gap: 0;
+    transition: all 0.05s ease;
     /* direction: ltr; */
 }
 

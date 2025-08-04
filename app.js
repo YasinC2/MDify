@@ -1,4 +1,4 @@
-const appVersion = '1.2.5';
+const appVersion = '1.2.6';
 document.getElementById('version').textContent = appVersion;
 
 // Alert timeout
@@ -560,7 +560,17 @@ const editor = new Editor({
             // Handle image uploads
             callback('https://via.placeholder.com/150');
         }
-    }
+    },
+    // events: {
+    //   focus: () => {
+    //     document.body.classList.add('editor-focused');
+    //     console.log('Editor focused');
+    //   },
+    //   blur: () => {
+    //     document.body.classList.remove('editor-focused');
+    //     console.log('Editor blurred');
+    //   }
+    // }
 });
 
 editor.addCommand("markdown", "test", function additem() {
@@ -642,6 +652,7 @@ document.addEventListener('keydown', async (e) => {
     await saveFile();
   }
 }, true);
+
 // Theme management
 const themeToggle = document.getElementById('themeToggle');
 
@@ -709,7 +720,7 @@ async function saveFile() {
       // console.log("File name has changed:", openedFileName, "->", fileNameInput.value);
       const confirmSaveAs = confirm(
         "File name has changed. Do you want to save it as a new file?\n\n" +
-        "Note: Files cannot be renamed directly from the browser. Please rename manually after saving, through your system's file manager."
+        "⚠️ Note: File renaming is not supported directly in the browser. If you want to change the file name, please save it as a new file with your desired name, or rename it manually in your system after saving."
       );
       if (confirmSaveAs) {
         await saveAsNewFile();
@@ -1097,35 +1108,6 @@ document.getElementById('editor-redo').addEventListener('click', () => {
   editor.exec('redo');
 });
 
-// // Handle device alert
-// const deviceAlert = document.getElementById('deviceAlert');
-// const dismissDeviceAlert = document.getElementById('dismissDeviceAlert');
-
-// dismissDeviceAlert.addEventListener('click', () => {
-//     // deviceAlert.classList.add('hidden');
-//     deviceAlert.style.display = 'none';
-//     localStorage.setItem('dismissedDeviceAlert', true);
-// });
-
-// console.log("dismissedDeviceAlert", !localStorage.getItem('dismissedDeviceAlert'));
-
-
-// Only show alert on small screens and if not previously dismissed
-// if (window.matchMedia('(max-width: 768px)').matches && !localStorage.getItem('dismissedDeviceAlert')) {
-//     deviceAlert.style.display = 'flex';
-// }
-
-// // Add event listener for custom command
-// document.addEventListener('keydown', (e) => {
-//     if (e.ctrlKey && e.key === 'i') {
-//         e.preventDefault();
-//         const textToInsert = prompt('Enter text to insert at cursor:');
-//         if (textToInsert) {
-//             editor.exec('insertText', textToInsert);
-//         }
-//     }
-// });
-
 async function loadFile(path) {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Failed to load ${path}`);
@@ -1231,4 +1213,44 @@ function setFileNameValue(fileName) {
   fileName = cleanFileName(fileName);
   openedFileName = fileName;
   fileNameInput.value = fileName.trim();
+}
+
+if (window.matchMedia('(max-width: 768px)').matches) {
+  // const footerButtons = document.getElementById('footerButtons');
+  // function updateToolbarPosition() {
+  //   if (window.visualViewport) {
+  //     // The distance from the bottom of the layout viewport to the bottom of the visual viewport
+  //     const bottomOffset = window.innerHeight - (window.visualViewport.height + window.visualViewport.offsetTop);
+
+  //     footerButtons.style.bottom = `${bottomOffset}px`;
+  //   } else {
+  //     footerButtons.style.bottom = '0px';
+  //   }
+  // }
+
+  // // Listen for changes in the visual viewport
+  // if (window.visualViewport) {
+  //   window.visualViewport.addEventListener('resize', updateToolbarPosition);
+  //   window.visualViewport.addEventListener('scroll', updateToolbarPosition);
+  // }
+
+  // window.addEventListener('resize', updateToolbarPosition);
+
+  // updateToolbarPosition();
+
+  function resizeToFit() {
+    if (window.visualViewport) {
+      const vh = window.visualViewport.height + 'px';
+      document.body.style.height = vh;
+      document.documentElement.style.height = vh;
+      window.scrollTo(0, 0);
+    }
+  }
+
+  // Check if the visualViewport API is supported
+  if (window.visualViewport) {
+    resizeToFit();
+    window.visualViewport.addEventListener('resize', resizeToFit);
+  }
+
 }

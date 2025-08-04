@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>MDify | Markdown Editor</title>
     <link rel="shortcut icon" href="img/MDify-192.png" type="image/png">
     <meta name="theme-color" content="#2b1100">
@@ -27,14 +27,6 @@
 </head>
 
 <body>
-    <!-- <div id="deviceAlert" class="device-alert" style="display: none;">
-        <p>
-            This tool is optimized for desktop or large displays.
-            <br>
-            On smaller screens, we recommend using the WYSIWYG mode for a better experience.
-        </p>
-        <button id="dismissDeviceAlert">Dismiss</button>
-    </div> -->
     <header class="toolbar">
         <div class="toolbar-top">
             <div class="left-controls">
@@ -120,7 +112,7 @@
         <div id="preview" class="preview-pane"></div>
     </div>
 
-    <div class="footer-buttons">
+    <div class="footer-buttons" id="footerButtons">
         <button id="editor-undo" title="Undo (Ctrl+Z)">
             <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M4 9V15M4 15H10M4 15C6.32744 12.9114 8.48287 10.5468 11.7453 10.0878C13.6777 9.81593 15.6461 10.1794 17.3539 11.1234C19.0617 12.0675 20.4164 13.5409 21.2139 15.3218" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
