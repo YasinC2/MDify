@@ -53,6 +53,14 @@
     background: #555;
 }
 
+input,
+textarea,
+button,
+select,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
 html,
 body {
     height: 100vh;
@@ -336,6 +344,33 @@ button:not(.toastui-editor-toolbar-icons):hover {
     z-index: 100;
 }
 
+/* .dropdown:has(.dropbtn:hover):before,
+.dropdown:has(.dropdown-content:hover):before {
+    content: '';
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: -1;
+    display: block;
+    transition: 0.3s;
+} */
+
+.dropdown.open:before {
+    content: '';
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: -1;
+    display: block;
+    transition: 0.3s;
+}
+
 .dropbtn {
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -357,10 +392,6 @@ button:not(.toastui-editor-toolbar-icons):hover {
     z-index: 1;
     border: 1px solid var(--border-color);
     border-radius: 4px;
-}
-
-.dropdown:hover .dropdown-content {
-    display: block;
 }
 
 .dropdown-content button,
@@ -780,6 +811,12 @@ del:has(+ del + del)+del+del {
 
 [dir="rtl"] .footer-buttons button svg {
     transform: scale(-1, 1);
+}
+
+@media (min-width: 992px) {
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
 }
 
 @media (max-width: 768px) {

@@ -1,4 +1,4 @@
-const appVersion = '1.2.8';
+const appVersion = '1.2.9';
 document.getElementById('version').textContent = appVersion;
 
 
@@ -850,6 +850,7 @@ async function saveFile() {
     await writable.close();
     showAlert('File saved successfully');
     lastSavedContent = editor.getMarkdown();
+    localStorage.removeItem('autosave');
   } catch (err) {
     showAlert(`Save failed: ${err.message}`);
   }
@@ -891,6 +892,7 @@ async function saveAsNewFile() {
     }
     
     lastSavedContent = editor.getMarkdown();
+    localStorage.removeItem('autosave');
   } catch (err) {
     if (err.name !== 'AbortError') {
       showAlert(`Save failed: ${err.message}`);
@@ -1229,9 +1231,6 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  setTimeout(() => {
-    disableSpellCheck();
-  }, 2000);
 });
 
 // Undo button action
@@ -1390,3 +1389,34 @@ if (window.matchMedia('(max-width: 768px)').matches) {
   }
 
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+  setTimeout(() => {
+    disableSpellCheck();
+  }, 2000);
+
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    const dropdownContainer = document.querySelector('.dropdown');
+    const toggleMenuButton = document.querySelector('.dropbtn');
+    const contentToToggle = document.querySelector('.dropdown-content');
+
+    toggleMenuButton.addEventListener('click', function () {
+      if (contentToToggle.style.display === 'none' || contentToToggle.style.display === '') {
+        contentToToggle.style.display = 'block'; // Or 'flex', 'grid', etc.
+        dropdownContainer.classList.add("open");
+      } else {
+        contentToToggle.style.display = 'none';
+        dropdownContainer.classList.remove("open");
+      }
+    });
+
+    window.addEventListener('click', (e) => {
+      console.log(e.target);
+      
+      if (e.target === dropdownContainer) {
+        contentToToggle.style.display = 'none';
+        dropdownContainer.classList.remove("open");
+      }
+    });
+  }
+});
