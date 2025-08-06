@@ -1,7 +1,7 @@
-const appVersion = '1.2.9';
+const appVersion = '1.2.10';
 document.getElementById('version').textContent = appVersion;
 
-
+let languageDetectionString = "";
 function detectLanguageByScript(text) {
   // Map of language codes to their Unicode script regex
   const languageScripts = {
@@ -68,19 +68,22 @@ const detectAndSetLanguage = debounce(() => {
   // Get the first 50 characters to make detection fast
   const sampleText = editor.getMarkdown().substring(0, 50);
   if (!sampleText) return;
+  if(sampleText.trim() != languageDetectionString.trim()) {
+    // console.log("---------> Checking Language...");
+    languageDetectionString = sampleText.trim();
+    const detectedLang = detectLanguageByScript(sampleText);
 
-  const detectedLang = detectLanguageByScript(sampleText);
-
-  if (detectedLang) {
-    console.log(`Detected language: ${detectedLang}`);
-    testLog(`Detected language: ${detectedLang}`)
-    // editor.lang = detectedLang;
-    editorContentElem.lang = detectedLang;
-  } else {
-    // If no unique script is detected, you might fall back to English or remove the lang attribute
-    editorContentElem.lang = 'en';
-    console.log('No unique script detected, defaulting to English.');
-    testLog('No unique script detected, defaulting to English.');
+    if (detectedLang) {
+      console.log(`Detected language: ${detectedLang}`);
+      testLog(`Detected language: ${detectedLang}`)
+      // editor.lang = detectedLang;
+      editorContentElem.lang = detectedLang;
+    } else {
+      // If no unique script is detected, you might fall back to English or remove the lang attribute
+      editorContentElem.lang = 'en';
+      console.log('No unique script detected, defaulting to English.');
+      testLog('No unique script detected, defaulting to English.');
+    }
   }
 }, 3000); // Wait 1 second after user stops typing
 
@@ -941,7 +944,7 @@ document.getElementById('openMd').addEventListener('click', async () => {
     setFileNameValue(file.name);
     setTimeout(async () => {
       await saveFile();
-    }, 2000);
+    }, 3000);
   } catch (err) {
     if (err.name !== 'AbortError') {
       console.error(err);
@@ -988,6 +991,7 @@ document.getElementById('newMd').addEventListener('click', () => {
   document.getElementById('fileInput').value = '';
   currentFileHandle = null;
   editor.setMarkdown('');
+  fileNameInput.value = "Untitled Document";
   localStorage.removeItem('autosave');
   sessionStorage.clear();
   // document.title = "MDify | New Document";

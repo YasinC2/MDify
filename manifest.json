@@ -3,7 +3,8 @@
   "short_name": "MDify",
   "description": "Progressive Web App for Markdown editing with RTL support",
   "start_url": "/MDify/",
-  "scope": "/",
+  "scope": "/MDify/",
+  "id": "/MDify/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2b1100",
@@ -19,7 +20,7 @@
     }
   ],
   "file_handlers": [{
-    "action": "./",
+    "action": "/MDify/",
     "accept": {
       "text/markdown": [".md"]
     },
@@ -32,7 +33,6 @@
     "Markdown Editor",
     "Text Editor"
   ],
-  "orientation": "any",
   "related_applications": [],
   "screenshots": [{
       "src": "img/screenshot-desktop.png",
