@@ -1,5 +1,7 @@
-const appVersion = '1.2.10';
+const appVersion = '1.2.11';
 document.getElementById('version').textContent = appVersion;
+
+const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
 let languageDetectionString = "";
 function detectLanguageByScript(text) {
@@ -91,6 +93,810 @@ const detectAndSetLanguage = debounce(() => {
 // Alert timeout
 let alertTimeout;
 let popupTimeout;
+
+const toggleDisableSpellCheck = document.getElementById('disableSpellCheck');
+
+const { Editor } = toastui;
+const { chart, codeSyntaxHighlight, colorSyntax, tableMergedCell, uml } = Editor.plugin;
+
+const chartOptions = {
+  minWidth: 100,
+  maxWidth: 600,
+  minHeight: 100,
+  maxHeight: 300
+};
+
+// Initialize Toast UI Editor with RTL support and custom commands
+const editor = new Editor({
+    el: document.querySelector('#editor'),
+    initialEditType: localStorage.getItem('WYSIWYGMode') === 'true' ? 'wysiwyg' : 'markdown',
+    previewStyle: localStorage.getItem('editorTabMode') === 'true' || isMobile ? 'tab' : 'vertical',
+    autofocus: false, // Set this to false to disable auto-focus
+    height: '100%',
+    usageStatistics: false,
+    theme: localStorage.getItem('selectedTheme') === 'dark' ? 'dark' : 'light',
+    plugins: [
+      [chart, chartOptions],
+      [codeSyntaxHighlight, { highlighter: Prism}],
+      colorSyntax,
+      tableMergedCell,
+      uml
+    ],
+    hooks: {
+        async 'addImageBlobHook'(blob, callback) {
+            // Handle image uploads
+            callback('https://via.placeholder.com/150');
+        }
+    },
+    events: {
+      // load: () => {
+      //   console.log('Editor loaded');
+      // },
+      change: () => {
+        // console.log('Editor changed');
+        if(!toggleDisableSpellCheck.checked) {
+          detectAndSetLanguage();
+        }
+      },
+    //   focus: () => {
+    //     document.body.classList.add('editor-focused');
+    //     console.log('Editor focused');
+    //   },
+    //   blur: () => {
+    //     document.body.classList.remove('editor-focused');
+    //     console.log('Editor blurred');
+    //   }
+    }
+});
+
+editor.addCommand("markdown", "test", function additem() {
+  console.log("ButtonClicked");
+  editor.replaceSelection(" \n\n ~~-~~ ~~-~~ ~~-~~ \n\n ");
+});
+
+editor.insertToolbarItem({ groupIndex: 5, itemIndex: 0 }, {
+  name: 'myItem',
+  tooltip: 'Page Break',
+  command: 'test',
+  text: '',
+  className: 'toastui-editor-toolbar-icons page-break-command',
+  // style: { backgroundImage: 'none' }
+});
+
+function disableSpellCheck() {
+  const editorContentElem = document.querySelector('.toastui-editor [contenteditable="true"]');
+  if(toggleDisableSpellCheck.checked) {
+    console.log("spellcheck disabled!");
+    editorContentElem.spellcheck = false;
+  } else {
+    editorContentElem.spellcheck = true;
+  }
+
+}
+
+toggleDisableSpellCheck.addEventListener('change', (e) => {
+  disableSpellCheck();
+  localStorage.setItem('disableSpellCheck', e.target.checked);
+});
+
+const savedDisableSpellCheck = localStorage.getItem('disableSpellCheck') === 'true';
+toggleDisableSpellCheck.checked = savedDisableSpellCheck;
+
+// Direction handling
+let isRTL = false;
+const toggleDirectionBtn = document.getElementById('toggleDirection');
+const editorTabModeBtn = document.getElementById('editorTabMode');
+const WYSIWYGModeBtn = document.getElementById('WYSIWYGMode');
+const toggleAutosave = document.getElementById('autosave-setting');
+
+// File Name
+const fileNameInput = document.getElementById('fileName');
+let openedFileName = '';
+
+toggleAutosave.addEventListener('change', (e) => {
+  if (e.target.checked) {
+    showAlert('Autosave is enabled. Your changes will be saved automatically every 10 seconds.');
+  } else {
+    showAlert('Autosave is disabled.');
+  }
+});
+
+function updateDirection() {
+  document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+  // editor.setOptions({ rtl: isRTL });
+  editor.setHeight('100%'); // Force refresh layout
+  localStorage.setItem('editorDirection', isRTL ? 'rtl' : 'ltr');
+}
+
+toggleDirectionBtn.addEventListener('change', () => {
+  isRTL = !isRTL;
+  updateDirection();
+});
+
+// Initialize Direction from localStorage
+const savedDirection = localStorage.getItem('editorDirection');
+if (savedDirection) {
+  isRTL = savedDirection === 'rtl';
+  updateDirection();
+  toggleDirectionBtn.checked = isRTL;
+}
+
+editorTabModeBtn.addEventListener('change', (e) => {
+  // console.log(e.target.checked);
+  localStorage.setItem('editorTabMode', e.target.checked);
+  editor.changePreviewStyle(e.target.checked ? 'tab' : 'vertical');
+});
+
+WYSIWYGModeBtn.addEventListener('change', (e) => {
+  // console.log(e.target.checked);
+  localStorage.setItem('WYSIWYGMode', e.target.checked);
+  editor.changeMode(e.target.checked ? 'wysiwyg' : 'markdown');
+});
+
+const savedEditorMode = localStorage.getItem('editorTabMode') === 'true' || isMobile;
+editorTabModeBtn.checked = savedEditorMode;
+
+const savedWYSIWYGModeAsDefault = localStorage.getItem('WYSIWYGMode') === 'true';
+WYSIWYGModeBtn.checked = savedWYSIWYGModeAsDefault;
+
+// Save keyboard shortcut
+document.addEventListener('keydown', async (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    e.stopPropagation();
+    await saveFile();
+  }
+}, true);
+
+// Theme management
+const themeToggle = document.getElementById('themeToggle');
+
+function applyTheme(isDark) {
+  const theme = isDark ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('selectedTheme', theme);
+  let el = document.getElementsByClassName("toastui-editor-defaultUI")[0];
+
+  if (isDark) {
+    el.classList.add("toastui-editor-dark");
+  } else {
+    el.classList.remove("toastui-editor-dark");
+  }
+}
+
+themeToggle.addEventListener('change', (e) => {
+  applyTheme(e.target.checked);
+});
+
+// Initialize from localStorage
+const savedTheme = localStorage.getItem('selectedTheme') === 'dark';
+themeToggle.checked = savedTheme;
+applyTheme(savedTheme);
+
+function saveAs(blob, filename) {
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+
+  // Clean up
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+let currentFileHandle = null;
+
+if ('launchQueue' in window) {
+  launchQueue.setConsumer(async (launchParams) => {
+    if (!launchParams.files.length) return;
+
+    const fileHandle = launchParams.files[0];
+    const file = await fileHandle.getFile();
+    const contents = await file.text();    
+
+    editor.setMarkdown(contents); // or your editor loading method
+    currentFileHandle = fileHandle; // 🔹 Save the handle so you can save it later
+    
+    localStorage.removeItem('autosave');
+    setFileNameValue(file.name);
+  });
+}
+
+let lastSavedContent = '';
+async function saveFile() {
+  try {
+    if (!currentFileHandle) {
+      await saveAsNewFile();
+      return;
+    }
+
+    const nameChanged = openedFileName !== fileNameInput.value;
+
+    if (nameChanged) {
+      // console.log("File name has changed:", openedFileName, "->", fileNameInput.value);
+      const confirmSaveAs = confirm(
+        "File name has changed. Do you want to save it as a new file?\n\n" +
+        "⚠️ Note: File renaming is not supported directly in the browser. If you want to change the file name, please save it as a new file with your desired name, or rename it manually in your system after saving."
+      );
+      if (confirmSaveAs) {
+        await saveAsNewFile();
+        return;
+      }
+      // Revert filename input to original
+      fileNameInput.value = openedFileName;
+    }
+
+    const writable = await currentFileHandle.createWritable();
+    await writable.write(editor.getMarkdown());
+    await writable.close();
+    showAlert('File saved successfully');
+    lastSavedContent = editor.getMarkdown();
+    localStorage.removeItem('autosave');
+  } catch (err) {
+    showAlert(`Save failed: ${err.message}`);
+  }
+}
+
+async function saveAsNewFile() {
+  try {
+    const suggestedName = extractSafeFilenameFromContent();
+    const handle = await window.showSaveFilePicker({
+      types: [{
+        description: 'Markdown Files',
+        accept: {
+          'text/markdown': ['.md'],
+          'text/plain': ['.txt'],
+        },
+      }],
+      excludeAcceptAllOption: true,
+      suggestedName: suggestedName
+    });
+
+    const writable = await handle.createWritable();
+    await writable.write(editor.getMarkdown());
+    await writable.close();
+    currentFileHandle = handle;
+
+
+    // Patch: Check if the file name has the proper extension
+    const fileName = handle.name || '';
+    // console.log(fileName);
+    // document.title = "MDify | " + fileName.toUpperCase();
+    
+    setFileNameValue(fileName);
+
+    if (!fileName.toLowerCase().endsWith('.md') && !fileName.toLowerCase().endsWith('.txt') && !fileName.toLowerCase().endsWith('.text')) {
+      showAlert('File saved successfully \nWarning: File extension is missing. The file may not be recognized as Markdown.');
+    }
+    else {
+      showAlert('File saved successfully');
+    }
+    
+    lastSavedContent = editor.getMarkdown();
+    localStorage.removeItem('autosave');
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      showAlert(`Save failed: ${err.message}`);
+    }
+  }
+}
+
+document.getElementById('openMd').addEventListener('click', async () => {
+  if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
+
+  try {
+    // Show native file picker
+    const [handle] = await window.showOpenFilePicker({
+      types: [{
+        description: 'Markdown Files',
+        accept: { 
+          'text/markdown': ['.md'],
+          'text/plain': ['.txt'],
+        }
+      }],
+      excludeAcceptAllOption: true,
+      multiple: false
+    });
+
+    const file = await handle.getFile();
+    const content = await file.text();
+    editor.setMarkdown(content);
+    currentFileHandle = handle;
+    showAlert(`Opened: ${file.name}`);
+    localStorage.removeItem('autosave');
+    // document.title = "MDify | " + file.name.toUpperCase();
+    
+    setFileNameValue(file.name);
+    setTimeout(async () => {
+      await saveFile();
+    }, 3000);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.error(err);
+      showAlert(`Failed to open file: ${err.message}`);
+    }
+  }
+});
+
+let importAndAppend = false;
+// Handle file imports
+document.getElementById('importMd').addEventListener('click', () => {
+  if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
+  importAndAppend = false;
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('importAppendMd').addEventListener('click', () => {
+  importAndAppend = true;
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    const content = await file.text();
+    if (importAndAppend) {
+      editor.setMarkdown(editor.getMarkdown() + '\n' + content);
+    } else {
+      editor.setMarkdown(content);
+    }
+
+    showAlert(`Imported: ${file.name}`);
+    document.getElementById('fileInput').value = '';
+  } catch (err) {
+    showAlert(`Import failed: ${err.message}`);
+  }
+});
+
+// New file confirmation
+document.getElementById('newMd').addEventListener('click', () => {
+  if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
+  document.getElementById('fileInput').value = '';
+  currentFileHandle = null;
+  editor.setMarkdown('');
+  fileNameInput.value = "Untitled Document";
+  localStorage.removeItem('autosave');
+  sessionStorage.clear();
+  // document.title = "MDify | New Document";
+  // sessionStorage.setItem('newFile', '1');
+  // location.href = location.href;
+  // location.reload(); // Force full reset
+});
+
+
+document.getElementById('saveBtn').addEventListener('click', saveFile);
+document.getElementById('saveAsBtn').addEventListener('click', saveAsNewFile);
+
+// Export handlers
+document.getElementById('exportMd').addEventListener('click', () => {
+  const content = editor.getMarkdown();
+  const blob = new Blob([content], {
+    type: 'text/markdown'
+  });
+  saveAs(blob, `document-${Date.now()}.md`);
+});
+
+document.getElementById('exportHtml').addEventListener('click', async () => {
+  try {
+    const content = editor.getHTML();
+    const suggestedName = extractSafeFilenameFromContent('html');
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${suggestedName}</title>
+    <style>
+    @import url("https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css");
+    body {
+        font-family: "Vazirmatn", Tahoma, Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif;
+        ${isRTL ? 'direction: rtl;' : ''}
+    }
+    pre{direction: ltr;}
+    /* 
+      Rule for the FIRST <del> in a sequence of three.
+      This is the one we will apply the special styles to.
+    */
+    del:has(+ del + del) {
+      /* This makes the element a block, which is required for page-break-after to work reliably. */
+      display: block;
+      /* The important rule for printing */
+      page-break-after: always;
+      /* These rules hide it visually without removing it from the layout, so the page break still works. */
+      height: 0;
+      visibility: hidden;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    /* 
+      Rule for the SECOND and THIRD <del> tags in the sequence.
+      We simply hide them completely.
+    */
+    del:has(+ del + del) + del,
+    del:has(+ del + del) + del + del {
+      display: none;
+    }
+    </style>
+</head>
+<body>
+    ${content}
+</body>
+</html>`;
+
+    const handle = await window.showSaveFilePicker({
+      types: [{
+        description: 'HTML Files',
+        accept: {'text/html': ['.html']},
+      }],
+      excludeAcceptAllOption: true,
+      suggestedName: suggestedName
+    });
+
+    const writable = await handle.createWritable();
+    await writable.write(html);
+    await writable.close();
+    showAlert('HTML exported successfully');
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      showAlert(`HTML export failed: ${err.message}`);
+    }
+  }
+});
+
+document.getElementById('exportStyledHtml').addEventListener('click', async () => {
+  try {
+    const content = editor.getHTML();
+    const suggestedName = extractSafeFilenameFromContent('html');
+    const prismCSS = await loadFile("./libs/prism.min.css");
+    const tuiEditorViewer = await loadFile("./libs/toastui-editor-viewer-export.min.css");
+
+    const rtlStyles = 
+    `
+.task-list-item {
+    margin-right: 0;
+    padding-right: 0;
+    margin-right: -24px;
+    padding-right: 24px;
+}
+.task-list-item:before {
+left: auto;
+right: 0;
+}
+    `;
+    
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${suggestedName}</title>
+    <style>
+    @import url("https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css");
+    body {
+        font-family: "Vazirmatn", Tahoma, Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif;
+        ${isRTL ? 'direction: rtl;' : ''}
+    }
+    /* 
+      Rule for the FIRST <del> in a sequence of three.
+      This is the one we will apply the special styles to.
+    */
+    del:has(+ del + del) {
+      /* This makes the element a block, which is required for page-break-after to work reliably. */
+      display: block;
+      /* The important rule for printing */
+      page-break-after: always;
+      /* These rules hide it visually without removing it from the layout, so the page break still works. */
+      height: 0;
+      visibility: hidden;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    /* 
+      Rule for the SECOND and THIRD <del> tags in the sequence.
+      We simply hide them completely.
+    */
+    del:has(+ del + del) + del,
+    del:has(+ del + del) + del + del {
+      display: none;
+    }
+
+    ${prismCSS}
+
+    ${tuiEditorViewer}
+
+    ${isRTL ? rtlStyles : ''}
+    pre{direction: ltr;}
+    </style>
+</head>
+<body>
+    ${content}
+</body>
+</html>`;
+
+    const handle = await window.showSaveFilePicker({
+      types: [{
+        description: 'HTML Files',
+        accept: {'text/html': ['.html']},
+      }],
+      excludeAcceptAllOption: true,
+      suggestedName: suggestedName
+    });
+
+    const writable = await handle.createWritable();
+    await writable.write(html);
+    await writable.close();
+    showAlert('HTML exported successfully');
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      showAlert(`HTML export failed: ${err.message}`);
+    }
+  }
+});
+
+// Autosave functionality
+setInterval(async () => {
+  if (!toggleAutosave.checked) return;
+  try {
+    const content = editor.getMarkdown();
+    if (currentFileHandle) {
+      const writable = await currentFileHandle.createWritable();
+      await writable.write(content);
+      await writable.close();
+      // showAlert('Autosaved to current file.');
+    } else {
+      localStorage.setItem('autosave', content);
+      // showAlert('Autosaved to local storage.');
+    }
+    
+    lastSavedContent = editor.getMarkdown();
+  } catch (err) {
+    showAlert(`Autosave failed: ${err.message}`);
+  }
+}, 10000);
+
+// Load autosaved content
+const autosave = localStorage.getItem('autosave');
+// console.log(autosave);
+
+// On Page Load
+if (sessionStorage.getItem('newFile')) {
+  editor.setMarkdown(''); // Or skip loading from localStorage
+  sessionStorage.removeItem('newFile');
+} else {
+  if (autosave) {
+    // console.log('Autosaved content found.');
+
+    editor.setMarkdown(autosave);
+    showAlert('Autosaved content loaded.');
+    toggleAutosave.checked = true;
+  } else {
+    // console.log('No autosaved content found.');
+    toggleAutosave.checked = false;
+    editor.setMarkdown('');
+  }
+}
+
+// Handle PWA file launches
+window.addEventListener('DOMContentLoaded', () => {
+  if ('launchQueue' in window) {
+    launchQueue.setConsumer(async (launchParams) => {
+      if (!launchParams.files.length) return;
+
+      try {
+        const fileHandle = launchParams.files[0];
+        const file = await fileHandle.getFile();
+        const content = await file.text();
+        editor.setMarkdown(content);
+        showAlert(`Opened file: ${file.name}`);
+      } catch (error) {
+        showAlert(`Error opening file: ${error.message}`);
+      }
+    });
+  }
+});
+
+// Undo button action
+document.getElementById('editor-undo').addEventListener('click', () => {
+  editor.exec('undo');
+});
+
+// Redo button action
+document.getElementById('editor-redo').addEventListener('click', () => {
+  editor.exec('redo');
+});
+
+async function loadFile(path) {
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(`Failed to load ${path}`);
+    return await response.text();
+}
+
+function showAlert(text) {
+  clearTimeout(popupTimeout);
+  clearTimeout(alertTimeout);
+
+  popupAlert(text);
+  textAlert(text);
+}
+
+function textAlert(text) {
+  const alert = document.getElementById("alert");
+
+  alert.innerText = text;
+  alert.style.opacity = "1";
+
+  // Hide slowly after 3 seconds
+  alertTimeout = setTimeout(() => {
+    alert.style.opacity = "0";
+    // Clear text after fade-out completes (500ms)
+    setTimeout(() => {
+      alert.innerText = "";
+    }, 500);
+  }, 3000);
+}
+
+function popupAlert(message) {
+  const popup = document.getElementById('aiStatus');
+
+  popup.innerText = message;
+
+  // popup.style = "visibility: visible;opacity: 1";
+  popup.style.visibility = "visible";
+  popup.style.opacity = "1";
+  popupTimeout = setTimeout(function () {
+    // popup.style = "visibility: hidden;opacity: 0";
+    popup.style.visibility = "hidden";
+    popup.style.opacity = "0";
+    // Clear text after fade-out completes (500ms)
+    setTimeout(() => {
+      popup.innerText = "";
+    }, 500);
+  }, 4000);
+}
+
+function extractSafeFilenameFromContent(type = 'md') {
+  const maxWords = 12;
+  const maxLength = 85;
+  const now = Date.now();
+  let clean;
+  let fileNameInputValue = fileNameInput.value.trim();
+
+  if (fileNameInputValue != "" && fileNameInputValue != "Untitled Document") {
+    // Remove Markdown characters and invalid filename characters
+    clean = fileNameInputValue
+      .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
+      .replace(/^#+\s*/, '') // Remove Markdown headers
+      .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
+      .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
+      .trim();
+  } else {
+    const content = editor.getMarkdown().trim();
+    const firstLine = content
+      .split('\n')
+      .find(line => line.trim().length > 0) || 'Untitled Document';
+
+    // Remove Markdown characters and invalid filename characters
+    clean = firstLine
+      .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
+      .replace(/^#+\s*/, '') // Remove Markdown headers
+      .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
+      .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
+      .trim();
+  }
+
+  // Limit to a few words
+  const words = clean.split(/\s+/).slice(0, maxWords);
+  clean = words.join('-');
+
+  // Limit total length
+  if (clean.length > maxLength) {
+    clean = clean.substring(0, maxLength).replace(/-+$/, '');
+  }
+
+  if (clean == 'Untitled-Document') {
+    clean = clean + '-' + now;
+  }
+  // console.log(clean);
+
+  return `${clean}.${type}`;
+}
+
+function setFileNameValue(fileName) {
+  function cleanFileName(name) {
+    return name.replace('--', '-').replace(/([\d\w\D\W])-([\d\w\D\W])/g, '$1 $2').replace(".md", "").replace(".txt", "").replace(".text", "").trim();
+  }
+  // console.log("---> " + fileName);
+  
+  fileName = cleanFileName(fileName);
+  openedFileName = fileName;
+  fileNameInput.value = fileName.trim();
+}
+
+if (isMobile) {
+  // const footerButtons = document.getElementById('footerButtons');
+  // function updateToolbarPosition() {
+  //   if (window.visualViewport) {
+  //     // The distance from the bottom of the layout viewport to the bottom of the visual viewport
+  //     const bottomOffset = window.innerHeight - (window.visualViewport.height + window.visualViewport.offsetTop);
+
+  //     footerButtons.style.bottom = `${bottomOffset}px`;
+  //   } else {
+  //     footerButtons.style.bottom = '0px';
+  //   }
+  // }
+
+  // // Listen for changes in the visual viewport
+  // if (window.visualViewport) {
+  //   window.visualViewport.addEventListener('resize', updateToolbarPosition);
+  //   window.visualViewport.addEventListener('scroll', updateToolbarPosition);
+  // }
+
+  // window.addEventListener('resize', updateToolbarPosition);
+
+  // updateToolbarPosition();
+
+  function resizeToFit() {
+    if (window.visualViewport) {
+      const vh = window.visualViewport.height + 'px';
+      document.body.style.height = vh;
+      document.documentElement.style.height = vh;
+      window.scrollTo(0, 0);
+    }
+  }
+
+  // Check if the visualViewport API is supported
+  if (window.visualViewport) {
+    resizeToFit();
+    window.visualViewport.addEventListener('resize', resizeToFit);
+  }
+
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  setTimeout(() => {
+    disableSpellCheck();
+  }, 2000);
+
+  if (isMobile) {
+    const dropdownContainer = document.querySelector('.dropdown');
+    const toggleMenuButton = document.querySelector('.dropbtn');
+    const contentToToggle = document.querySelector('.dropdown-content');
+
+    toggleMenuButton.addEventListener('click', function () {
+      if (contentToToggle.style.display === 'none' || contentToToggle.style.display === '') {
+        contentToToggle.style.display = 'block'; // Or 'flex', 'grid', etc.
+        dropdownContainer.classList.add("open");
+      } else {
+        contentToToggle.style.display = 'none';
+        dropdownContainer.classList.remove("open");
+      }
+    });
+
+    window.addEventListener('click', (e) => {
+      // console.log(e.target);
+      
+      if (e.target === dropdownContainer) {
+        contentToToggle.style.display = 'none';
+        dropdownContainer.classList.remove("open");
+      }
+    });
+  }
+});
+
+
+///////////////////////////////////////////////////////
+/////////////////////////////////////////////////////// Start of AI Codes
+///////////////////////////////////////////////////////
 
 // AI Assistant Modal
 const aiModal = document.getElementById('aiAssistantModal');
@@ -616,811 +1422,146 @@ async function generateContent(prompt) {
 /////////////////////////////////////////////////////// End of AI Codes
 ///////////////////////////////////////////////////////
 
-const toggleDisableSpellCheck = document.getElementById('disableSpellCheck');
 
-const { Editor } = toastui;
-const { chart, codeSyntaxHighlight, colorSyntax, tableMergedCell, uml } = Editor.plugin;
+// // The event listener for closing the window/tab
+// function hasUnsavedChanges() {
+//   return editor.getMarkdown().trim() !== lastSavedContent.trim();
+// }
 
-const chartOptions = {
-  minWidth: 100,
-  maxWidth: 600,
-  minHeight: 100,
-  maxHeight: 300
-};
+// // Always warn before tab close or app close (works on desktop & mobile)
+// // window.addEventListener('beforeunload', (event) => {
+// //   if (!hasUnsavedChanges()) return;
+// //   event.preventDefault();
+// //   event.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+// // });
 
-// Initialize Toast UI Editor with RTL support and custom commands
-const editor = new Editor({
-    el: document.querySelector('#editor'),
-    initialEditType: localStorage.getItem('WYSIWYGMode') === 'true' ? 'wysiwyg' : 'markdown',
-    previewStyle: localStorage.getItem('editorTabMode') === 'true' || window.matchMedia('(max-width: 768px)').matches ? 'tab' : 'vertical',
-    autofocus: false, // Set this to false to disable auto-focus
-    height: '100%',
-    usageStatistics: false,
-    theme: localStorage.getItem('selectedTheme') === 'dark' ? 'dark' : 'light',
-    plugins: [
-      [chart, chartOptions],
-      [codeSyntaxHighlight, { highlighter: Prism}],
-      colorSyntax,
-      tableMergedCell,
-      uml
-    ],
-    hooks: {
-        async 'addImageBlobHook'(blob, callback) {
-            // Handle image uploads
-            callback('https://via.placeholder.com/150');
-        }
-    },
-    events: {
-      // load: () => {
-      //   console.log('Editor loaded');
-      // },
-      change: () => {
-        // console.log('Editor changed');
-        if(!toggleDisableSpellCheck.checked) {
-          detectAndSetLanguage();
-        }
-      },
-    //   focus: () => {
-    //     document.body.classList.add('editor-focused');
-    //     console.log('Editor focused');
-    //   },
-    //   blur: () => {
-    //     document.body.classList.remove('editor-focused');
-    //     console.log('Editor blurred');
-    //   }
-    }
-});
+// // Mobile/PWA: intercept browser back button
+// if (isMobile) {
+//   window.history.pushState({ page: 1 }, '', '');
 
-editor.addCommand("markdown", "test", function additem() {
-  console.log("ButtonClicked");
-  editor.replaceSelection(" \n\n ~~-~~ ~~-~~ ~~-~~ \n\n ");
-});
+//   window.addEventListener('popstate', (event) => {
+//     if (hasUnsavedChanges()) {
+//       const confirmExit = confirm('You have unsaved changes. Exit without saving?');
+//       if (!confirmExit) {
+//         // Restore history state so back still triggers confirmation
+//         window.history.pushState({ page: 1 }, '', '');
+//         return;
+//       }
+//     }
+//     // Allow normal back navigation
+//     // history.back();
+//     history.go(-1);
+//   });
+// } else {
+//   // Desktop exit confirmation
+//   window.addEventListener('beforeunload', (event) => {
+//     if (!hasUnsavedChanges()) return;
+//     event.preventDefault();
+//     event.returnValue = 'Exit?'; // Needed for Chrome
+//   });
+// }
 
-editor.insertToolbarItem({ groupIndex: 5, itemIndex: 0 }, {
-  name: 'myItem',
-  tooltip: 'Page Break',
-  command: 'test',
-  text: '',
-  className: 'toastui-editor-toolbar-icons page-break-command',
-  // style: { backgroundImage: 'none' }
-});
-
-function disableSpellCheck() {
-  const editorContentElem = document.querySelector('.toastui-editor [contenteditable="true"]');
-  if(toggleDisableSpellCheck.checked) {
-    console.log("spellcheck disabled!");
-    editorContentElem.spellcheck = false;
-  } else {
-    editorContentElem.spellcheck = true;
-  }
-
+function hasUnsavedChanges() {
+  return editor.getMarkdown().trim() !== lastSavedContent.trim();
 }
 
-toggleDisableSpellCheck.addEventListener('change', (e) => {
-  disableSpellCheck();
-  localStorage.setItem('disableSpellCheck', e.target.checked);
-});
+// (function() {
+//   let confirmationActive = false; // To prevent multiple confirm dialogs in a row
 
-const savedDisableSpellCheck = localStorage.getItem('disableSpellCheck') === 'true';
-toggleDisableSpellCheck.checked = savedDisableSpellCheck;
 
-// Direction handling
-let isRTL = false;
-const toggleDirectionBtn = document.getElementById('toggleDirection');
-const editorTabModeBtn = document.getElementById('editorTabMode');
-const WYSIWYGModeBtn = document.getElementById('WYSIWYGMode');
-const toggleAutosave = document.getElementById('autosave-setting');
 
-// File Name
-const fileNameInput = document.getElementById('fileName');
-let openedFileName = '';
+//   // === Desktop: beforeunload for close/refresh/navigation ===
+//   if (!isMobile) {
+//     window.addEventListener('beforeunload', (event) => {
+//       if (!hasUnsavedChanges()) return;
+//       event.preventDefault();
+//       event.returnValue = ''; // Chrome requires returnValue to trigger confirmation
+//     });
+//     return; // Desktop done here
+//   }
 
-toggleAutosave.addEventListener('change', (e) => {
-  if (e.target.checked) {
-    showAlert('Autosave is enabled. Your changes will be saved automatically every 10 seconds.');
-  } else {
-    showAlert('Autosave is disabled.');
-  }
-});
+//   // === Mobile/PWA: intercept back button with popstate + beforeunload for tab close ===
 
-function updateDirection() {
-  document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-  // editor.setOptions({ rtl: isRTL });
-  editor.setHeight('100%'); // Force refresh layout
-  localStorage.setItem('editorDirection', isRTL ? 'rtl' : 'ltr');
-}
+//   // Push initial history state to trap back button
+//   window.history.pushState({ page: 1 }, '', '');
 
-toggleDirectionBtn.addEventListener('change', () => {
-  isRTL = !isRTL;
-  updateDirection();
-});
+//   window.addEventListener('popstate', (event) => {
+//     if (confirmationActive) {
+//       // If a confirmation dialog is already open, do nothing to avoid stacking dialogs
+//       window.history.pushState({ page: 1 }, '', '');
+//       return;
+//     }
 
-// Initialize Direction from localStorage
-const savedDirection = localStorage.getItem('editorDirection');
-if (savedDirection) {
-  isRTL = savedDirection === 'rtl';
-  updateDirection();
-  toggleDirectionBtn.checked = isRTL;
-}
+//     if (!hasUnsavedChanges()) {
+//       // No unsaved changes → allow normal back navigation
+//       confirmationActive = false;
+//       history.back();
+//       // history.go(-1);
+//       return;
+//     }
 
-editorTabModeBtn.addEventListener('change', (e) => {
-  // console.log(e.target.checked);
-  localStorage.setItem('editorTabMode', e.target.checked);
-  editor.changePreviewStyle(e.target.checked ? 'tab' : 'vertical');
-});
+//     confirmationActive = false; // Lock to prevent multiple dialogs
 
-WYSIWYGModeBtn.addEventListener('change', (e) => {
-  // console.log(e.target.checked);
-  localStorage.setItem('WYSIWYGMode', e.target.checked);
-  editor.changeMode(e.target.checked ? 'wysiwyg' : 'markdown');
-});
+//     const leave = confirm('You have unsaved changes. Exit without saving?');
 
-const savedEditorMode = localStorage.getItem('editorTabMode') === 'true' || window.matchMedia('(max-width: 768px)').matches;
-editorTabModeBtn.checked = savedEditorMode;
+//     if (!leave) {
+//       // User cancelled exit, restore state to keep intercepting back button
+//       window.history.pushState({ page: 1 }, '', '');
+//       confirmationActive = false;
+//     } else {
+//       // User confirmed exit, allow back navigation
+//       confirmationActive = false;
+//       history.back();
+//       // history.go(-1);
+//     }
+//   });
 
-const savedWYSIWYGModeAsDefault = localStorage.getItem('WYSIWYGMode') === 'true';
-WYSIWYGModeBtn.checked = savedWYSIWYGModeAsDefault;
+//   // Also handle tab/window close on mobile
+//   window.addEventListener('beforeunload', (event) => {
+//     if (!hasUnsavedChanges()) return;
+//     event.preventDefault();
+//     event.returnValue = ''; // Trigger native confirmation dialog
+//   });
 
-// Save keyboard shortcut
-document.addEventListener('keydown', async (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault();
-    e.stopPropagation();
-    await saveFile();
-  }
-}, true);
+// })();
 
-// Theme management
-const themeToggle = document.getElementById('themeToggle');
 
-function applyTheme(isDark) {
-  const theme = isDark ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('selectedTheme', theme);
-  let el = document.getElementsByClassName("toastui-editor-defaultUI")[0];
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-  if (isDark) {
-    el.classList.add("toastui-editor-dark");
-  } else {
-    el.classList.remove("toastui-editor-dark");
-  }
-}
+if (isMobile) {
+  if (isStandalone) {
+    // Installed PWA on mobile: intercept back button via popstate
+    window.history.pushState({ page: 1 }, '', '');
 
-themeToggle.addEventListener('change', (e) => {
-  applyTheme(e.target.checked);
-});
-
-// Initialize from localStorage
-const savedTheme = localStorage.getItem('selectedTheme') === 'dark';
-themeToggle.checked = savedTheme;
-applyTheme(savedTheme);
-
-function saveAs(blob, filename) {
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-
-  // Clean up
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-let currentFileHandle = null;
-
-if ('launchQueue' in window) {
-  launchQueue.setConsumer(async (launchParams) => {
-    if (!launchParams.files.length) return;
-
-    const fileHandle = launchParams.files[0];
-    const file = await fileHandle.getFile();
-    const contents = await file.text();    
-
-    editor.setMarkdown(contents); // or your editor loading method
-    currentFileHandle = fileHandle; // 🔹 Save the handle so you can save it later
-  });
-}
-
-let lastSavedContent = '';
-async function saveFile() {
-  try {
-    if (!currentFileHandle) {
-      await saveAsNewFile();
-      return;
-    }
-
-    const nameChanged = openedFileName !== fileNameInput.value;
-
-    if (nameChanged) {
-      // console.log("File name has changed:", openedFileName, "->", fileNameInput.value);
-      const confirmSaveAs = confirm(
-        "File name has changed. Do you want to save it as a new file?\n\n" +
-        "⚠️ Note: File renaming is not supported directly in the browser. If you want to change the file name, please save it as a new file with your desired name, or rename it manually in your system after saving."
-      );
-      if (confirmSaveAs) {
-        await saveAsNewFile();
+    window.addEventListener('popstate', (event) => {
+      if (!hasUnsavedChanges()) {
+        history.go(-1);
         return;
       }
-      // Revert filename input to original
-      fileNameInput.value = openedFileName;
-    }
 
-    const writable = await currentFileHandle.createWritable();
-    await writable.write(editor.getMarkdown());
-    await writable.close();
-    showAlert('File saved successfully');
-    lastSavedContent = editor.getMarkdown();
-    localStorage.removeItem('autosave');
-  } catch (err) {
-    showAlert(`Save failed: ${err.message}`);
-  }
-}
-
-async function saveAsNewFile() {
-  try {
-    const suggestedName = extractSafeFilenameFromContent();
-    const handle = await window.showSaveFilePicker({
-      types: [{
-        description: 'Markdown Files',
-        accept: {
-          'text/markdown': ['.md'],
-          'text/plain': ['.txt'],
-        },
-      }],
-      excludeAcceptAllOption: true,
-      suggestedName: suggestedName
-    });
-
-    const writable = await handle.createWritable();
-    await writable.write(editor.getMarkdown());
-    await writable.close();
-    currentFileHandle = handle;
-
-
-    // Patch: Check if the file name has the proper extension
-    const fileName = handle.name || '';
-    // console.log(fileName);
-    // document.title = "MDify | " + fileName.toUpperCase();
-    
-    setFileNameValue(fileName);
-
-    if (!fileName.toLowerCase().endsWith('.md') && !fileName.toLowerCase().endsWith('.txt') && !fileName.toLowerCase().endsWith('.text')) {
-      showAlert('File saved successfully \nWarning: File extension is missing. The file may not be recognized as Markdown.');
-    }
-    else {
-      showAlert('File saved successfully');
-    }
-    
-    lastSavedContent = editor.getMarkdown();
-    localStorage.removeItem('autosave');
-  } catch (err) {
-    if (err.name !== 'AbortError') {
-      showAlert(`Save failed: ${err.message}`);
-    }
-  }
-}
-
-// The event listener for closing the window/tab
-window.addEventListener('beforeunload', (event) => {
-  const comparedContent = editor.getMarkdown().trim() === lastSavedContent.trim();
-  const isDirty = !comparedContent;
-  
-  if (!isDirty) {
-    return;
-  }
-
-  event.preventDefault();
-  event.returnValue = ''; 
-});
-
-document.getElementById('openMd').addEventListener('click', async () => {
-  if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
-
-  try {
-    // Show native file picker
-    const [handle] = await window.showOpenFilePicker({
-      types: [{
-        description: 'Markdown Files',
-        accept: { 
-          'text/markdown': ['.md'],
-          'text/plain': ['.txt'],
-        }
-      }],
-      excludeAcceptAllOption: true,
-      multiple: false
-    });
-
-    const file = await handle.getFile();
-    const content = await file.text();
-    editor.setMarkdown(content);
-    currentFileHandle = handle;
-    showAlert(`Opened: ${file.name}`);
-    localStorage.removeItem('autosave');
-    // document.title = "MDify | " + file.name.toUpperCase();
-    
-    setFileNameValue(file.name);
-    setTimeout(async () => {
-      await saveFile();
-    }, 3000);
-  } catch (err) {
-    if (err.name !== 'AbortError') {
-      console.error(err);
-      showAlert(`Failed to open file: ${err.message}`);
-    }
-  }
-});
-
-let importAndAppend = false;
-// Handle file imports
-document.getElementById('importMd').addEventListener('click', () => {
-  if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
-  importAndAppend = false;
-  document.getElementById('fileInput').click();
-});
-
-document.getElementById('importAppendMd').addEventListener('click', () => {
-  importAndAppend = true;
-  document.getElementById('fileInput').click();
-});
-
-document.getElementById('fileInput').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  try {
-    const content = await file.text();
-    if (importAndAppend) {
-      editor.setMarkdown(editor.getMarkdown() + '\n' + content);
-    } else {
-      editor.setMarkdown(content);
-    }
-
-    showAlert(`Imported: ${file.name}`);
-    document.getElementById('fileInput').value = '';
-  } catch (err) {
-    showAlert(`Import failed: ${err.message}`);
-  }
-});
-
-// New file confirmation
-document.getElementById('newMd').addEventListener('click', () => {
-  if (editor.getMarkdown().trim() && !confirm('Unsaved changes will be lost. Continue?')) return;
-  document.getElementById('fileInput').value = '';
-  currentFileHandle = null;
-  editor.setMarkdown('');
-  fileNameInput.value = "Untitled Document";
-  localStorage.removeItem('autosave');
-  sessionStorage.clear();
-  // document.title = "MDify | New Document";
-  // sessionStorage.setItem('newFile', '1');
-  // location.href = location.href;
-  // location.reload(); // Force full reset
-});
-
-
-document.getElementById('saveBtn').addEventListener('click', saveFile);
-document.getElementById('saveAsBtn').addEventListener('click', saveAsNewFile);
-
-// Export handlers
-document.getElementById('exportMd').addEventListener('click', () => {
-  const content = editor.getMarkdown();
-  const blob = new Blob([content], {
-    type: 'text/markdown'
-  });
-  saveAs(blob, `document-${Date.now()}.md`);
-});
-
-document.getElementById('exportHtml').addEventListener('click', async () => {
-  try {
-    const content = editor.getHTML();
-    const suggestedName = extractSafeFilenameFromContent('html');
-
-    const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${suggestedName}</title>
-    <style>
-    @import url("https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css");
-    body {
-        font-family: "Vazirmatn", Tahoma, Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif;
-        ${isRTL ? 'direction: rtl;' : ''}
-    }
-    pre{direction: ltr;}
-    /* 
-      Rule for the FIRST <del> in a sequence of three.
-      This is the one we will apply the special styles to.
-    */
-    del:has(+ del + del) {
-      /* This makes the element a block, which is required for page-break-after to work reliably. */
-      display: block;
-      /* The important rule for printing */
-      page-break-after: always;
-      /* These rules hide it visually without removing it from the layout, so the page break still works. */
-      height: 0;
-      visibility: hidden;
-      margin: 0;
-      padding: 0;
-      border: none;
-    }
-    /* 
-      Rule for the SECOND and THIRD <del> tags in the sequence.
-      We simply hide them completely.
-    */
-    del:has(+ del + del) + del,
-    del:has(+ del + del) + del + del {
-      display: none;
-    }
-    </style>
-</head>
-<body>
-    ${content}
-</body>
-</html>`;
-
-    const handle = await window.showSaveFilePicker({
-      types: [{
-        description: 'HTML Files',
-        accept: {'text/html': ['.html']},
-      }],
-      excludeAcceptAllOption: true,
-      suggestedName: suggestedName
-    });
-
-    const writable = await handle.createWritable();
-    await writable.write(html);
-    await writable.close();
-    showAlert('HTML exported successfully');
-  } catch (err) {
-    if (err.name !== 'AbortError') {
-      showAlert(`HTML export failed: ${err.message}`);
-    }
-  }
-});
-
-document.getElementById('exportStyledHtml').addEventListener('click', async () => {
-  try {
-    const content = editor.getHTML();
-    const suggestedName = extractSafeFilenameFromContent('html');
-    const prismCSS = await loadFile("./libs/prism.min.css");
-    const tuiEditorViewer = await loadFile("./libs/toastui-editor-viewer-export.min.css");
-
-    const rtlStyles = 
-    `
-.task-list-item {
-    margin-right: 0;
-    padding-right: 0;
-    margin-right: -24px;
-    padding-right: 24px;
-}
-.task-list-item:before {
-left: auto;
-right: 0;
-}
-    `;
-    
-    const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${suggestedName}</title>
-    <style>
-    @import url("https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@latest/dist/font-face.css");
-    body {
-        font-family: "Vazirmatn", Tahoma, Open Sans, Helvetica Neue, Helvetica, Arial, sans-serif;
-        ${isRTL ? 'direction: rtl;' : ''}
-    }
-    /* 
-      Rule for the FIRST <del> in a sequence of three.
-      This is the one we will apply the special styles to.
-    */
-    del:has(+ del + del) {
-      /* This makes the element a block, which is required for page-break-after to work reliably. */
-      display: block;
-      /* The important rule for printing */
-      page-break-after: always;
-      /* These rules hide it visually without removing it from the layout, so the page break still works. */
-      height: 0;
-      visibility: hidden;
-      margin: 0;
-      padding: 0;
-      border: none;
-    }
-    /* 
-      Rule for the SECOND and THIRD <del> tags in the sequence.
-      We simply hide them completely.
-    */
-    del:has(+ del + del) + del,
-    del:has(+ del + del) + del + del {
-      display: none;
-    }
-
-    ${prismCSS}
-
-    ${tuiEditorViewer}
-
-    ${isRTL ? rtlStyles : ''}
-    pre{direction: ltr;}
-    </style>
-</head>
-<body>
-    ${content}
-</body>
-</html>`;
-
-    const handle = await window.showSaveFilePicker({
-      types: [{
-        description: 'HTML Files',
-        accept: {'text/html': ['.html']},
-      }],
-      excludeAcceptAllOption: true,
-      suggestedName: suggestedName
-    });
-
-    const writable = await handle.createWritable();
-    await writable.write(html);
-    await writable.close();
-    showAlert('HTML exported successfully');
-  } catch (err) {
-    if (err.name !== 'AbortError') {
-      showAlert(`HTML export failed: ${err.message}`);
-    }
-  }
-});
-
-// Autosave functionality
-setInterval(async () => {
-  if (!toggleAutosave.checked) return;
-  try {
-    const content = editor.getMarkdown();
-    if (currentFileHandle) {
-      const writable = await currentFileHandle.createWritable();
-      await writable.write(content);
-      await writable.close();
-      // showAlert('Autosaved to current file.');
-    } else {
-      localStorage.setItem('autosave', content);
-      // showAlert('Autosaved to local storage.');
-    }
-    
-    lastSavedContent = editor.getMarkdown();
-  } catch (err) {
-    showAlert(`Autosave failed: ${err.message}`);
-  }
-}, 10000);
-
-// Load autosaved content
-const autosave = localStorage.getItem('autosave');
-// console.log(autosave);
-
-// On Page Load
-if (sessionStorage.getItem('newFile')) {
-  editor.setMarkdown(''); // Or skip loading from localStorage
-  sessionStorage.removeItem('newFile');
-} else {
-  if (autosave) {
-    // console.log('Autosaved content found.');
-
-    editor.setMarkdown(autosave);
-    showAlert('Autosaved content loaded.');
-    toggleAutosave.checked = true;
-  } else {
-    // console.log('No autosaved content found.');
-    toggleAutosave.checked = false;
-    editor.setMarkdown('');
-  }
-}
-
-// Handle PWA file launches
-window.addEventListener('DOMContentLoaded', () => {
-  if ('launchQueue' in window) {
-    launchQueue.setConsumer(async (launchParams) => {
-      if (!launchParams.files.length) return;
-
-      try {
-        const fileHandle = launchParams.files[0];
-        const file = await fileHandle.getFile();
-        const content = await file.text();
-        editor.setMarkdown(content);
-        showAlert(`Opened file: ${file.name}`);
-      } catch (error) {
-        showAlert(`Error opening file: ${error.message}`);
-      }
-    });
-  }
-});
-
-// Undo button action
-document.getElementById('editor-undo').addEventListener('click', () => {
-  editor.exec('undo');
-});
-
-// Redo button action
-document.getElementById('editor-redo').addEventListener('click', () => {
-  editor.exec('redo');
-});
-
-async function loadFile(path) {
-    const response = await fetch(path);
-    if (!response.ok) throw new Error(`Failed to load ${path}`);
-    return await response.text();
-}
-
-function showAlert(text) {
-  clearTimeout(popupTimeout);
-  clearTimeout(alertTimeout);
-
-  popupAlert(text);
-  textAlert(text);
-}
-
-function textAlert(text) {
-  const alert = document.getElementById("alert");
-
-  alert.innerText = text;
-  alert.style.opacity = "1";
-
-  // Hide slowly after 3 seconds
-  alertTimeout = setTimeout(() => {
-    alert.style.opacity = "0";
-    // Clear text after fade-out completes (500ms)
-    setTimeout(() => {
-      alert.innerText = "";
-    }, 500);
-  }, 3000);
-}
-
-function popupAlert(message) {
-  const popup = document.getElementById('aiStatus');
-
-  popup.innerText = message;
-
-  // popup.style = "visibility: visible;opacity: 1";
-  popup.style.visibility = "visible";
-  popup.style.opacity = "1";
-  popupTimeout = setTimeout(function () {
-    // popup.style = "visibility: hidden;opacity: 0";
-    popup.style.visibility = "hidden";
-    popup.style.opacity = "0";
-    // Clear text after fade-out completes (500ms)
-    setTimeout(() => {
-      popup.innerText = "";
-    }, 500);
-  }, 4000);
-}
-
-function extractSafeFilenameFromContent(type = 'md') {
-  const maxWords = 12;
-  const maxLength = 85;
-  const now = Date.now();
-  let clean;
-  let fileNameInputValue = fileNameInput.value.trim();
-
-  if (fileNameInputValue != "" && fileNameInputValue != "Untitled Document") {
-    // Remove Markdown characters and invalid filename characters
-    clean = fileNameInputValue
-      .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
-      .replace(/^#+\s*/, '') // Remove Markdown headers
-      .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
-      .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
-      .trim();
-  } else {
-    const content = editor.getMarkdown().trim();
-    const firstLine = content
-      .split('\n')
-      .find(line => line.trim().length > 0) || 'Untitled Document';
-
-    // Remove Markdown characters and invalid filename characters
-    clean = firstLine
-      .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
-      .replace(/^#+\s*/, '') // Remove Markdown headers
-      .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
-      .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
-      .trim();
-  }
-
-  // Limit to a few words
-  const words = clean.split(/\s+/).slice(0, maxWords);
-  clean = words.join('-');
-
-  // Limit total length
-  if (clean.length > maxLength) {
-    clean = clean.substring(0, maxLength).replace(/-+$/, '');
-  }
-
-  if (clean == 'Untitled-Document') {
-    clean = clean + '-' + now;
-  }
-  // console.log(clean);
-
-  return `${clean}.${type}`;
-}
-
-function setFileNameValue(fileName) {
-  function cleanFileName(name) {
-    return name.replace('--', '-').replace(/([\d\w\D\W])-([\d\w\D\W])/g, '$1 $2').replace(".md", "").replace(".txt", "").replace(".text", "").trim();
-  }
-  // console.log("---> " + fileName);
-  
-  fileName = cleanFileName(fileName);
-  openedFileName = fileName;
-  fileNameInput.value = fileName.trim();
-}
-
-if (window.matchMedia('(max-width: 768px)').matches) {
-  // const footerButtons = document.getElementById('footerButtons');
-  // function updateToolbarPosition() {
-  //   if (window.visualViewport) {
-  //     // The distance from the bottom of the layout viewport to the bottom of the visual viewport
-  //     const bottomOffset = window.innerHeight - (window.visualViewport.height + window.visualViewport.offsetTop);
-
-  //     footerButtons.style.bottom = `${bottomOffset}px`;
-  //   } else {
-  //     footerButtons.style.bottom = '0px';
-  //   }
-  // }
-
-  // // Listen for changes in the visual viewport
-  // if (window.visualViewport) {
-  //   window.visualViewport.addEventListener('resize', updateToolbarPosition);
-  //   window.visualViewport.addEventListener('scroll', updateToolbarPosition);
-  // }
-
-  // window.addEventListener('resize', updateToolbarPosition);
-
-  // updateToolbarPosition();
-
-  function resizeToFit() {
-    if (window.visualViewport) {
-      const vh = window.visualViewport.height + 'px';
-      document.body.style.height = vh;
-      document.documentElement.style.height = vh;
-      window.scrollTo(0, 0);
-    }
-  }
-
-  // Check if the visualViewport API is supported
-  if (window.visualViewport) {
-    resizeToFit();
-    window.visualViewport.addEventListener('resize', resizeToFit);
-  }
-
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-  setTimeout(() => {
-    disableSpellCheck();
-  }, 2000);
-
-  if (window.matchMedia('(max-width: 768px)').matches) {
-    const dropdownContainer = document.querySelector('.dropdown');
-    const toggleMenuButton = document.querySelector('.dropbtn');
-    const contentToToggle = document.querySelector('.dropdown-content');
-
-    toggleMenuButton.addEventListener('click', function () {
-      if (contentToToggle.style.display === 'none' || contentToToggle.style.display === '') {
-        contentToToggle.style.display = 'block'; // Or 'flex', 'grid', etc.
-        dropdownContainer.classList.add("open");
+      const leave = confirm('You have unsaved changes. Exit without saving?');
+      if (!leave) {
+        // Cancel exit, restore history state
+        window.history.pushState({ page: 1 }, '', '');
       } else {
-        contentToToggle.style.display = 'none';
-        dropdownContainer.classList.remove("open");
+        history.go(-1);
       }
     });
 
-    window.addEventListener('click', (e) => {
-      console.log(e.target);
-      
-      if (e.target === dropdownContainer) {
-        contentToToggle.style.display = 'none';
-        dropdownContainer.classList.remove("open");
-      }
+    // No beforeunload confirmation here because it's not supported
+  } else {
+    // Mobile browser: rely on beforeunload native confirmation (no history trick)
+    window.addEventListener('beforeunload', (event) => {
+      if (!hasUnsavedChanges()) return;
+      event.preventDefault();
+      event.returnValue = ''; // triggers native confirm
     });
   }
-});
+} else {
+  // Desktop: standard beforeunload confirmation
+  window.addEventListener('beforeunload', (event) => {
+    if (!hasUnsavedChanges()) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+}
