@@ -1,4 +1,4 @@
-const appVersion = '1.2.11';
+const appVersion = '1.2.12';
 document.getElementById('version').textContent = appVersion;
 
 const isMobile = window.matchMedia('(max-width: 768px)').matches;
@@ -1531,20 +1531,26 @@ const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
 if (isMobile) {
   if (isStandalone) {
     // Installed PWA on mobile: intercept back button via popstate
-    window.history.pushState({ page: 1 }, '', '');
+    // window.history.pushState({ page: 1 }, '', '');
+    window.history.pushState({}, '');
 
     window.addEventListener('popstate', (event) => {
       if (!hasUnsavedChanges()) {
+        history.back();
         history.go(-1);
+        window.close();
         return;
       }
 
       const leave = confirm('You have unsaved changes. Exit without saving?');
       if (!leave) {
         // Cancel exit, restore history state
-        window.history.pushState({ page: 1 }, '', '');
+        // window.history.pushState({ page: 1 }, '', '');
+        window.history.pushState({}, '');
       } else {
+        history.back();
         history.go(-1);
+        window.close();
       }
     });
 
