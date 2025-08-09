@@ -450,10 +450,50 @@ button:not(.toastui-editor-toolbar-icons):hover {
     cursor: default;
 }
 
+.right-controls button {
+    padding: 8px;
+    line-height: 0;
+    display: flex;
+    position: relative;
+}
+
+#directionBtn svg {
+    position: relative;
+    top: 1px;
+}
+
+#autoSaveIconBtn svg.save-icon {
+    transform: scale(1.2);
+}
+
+#autoSaveIconBtn .status svg {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+}
+
+#autoSaveIconBtn .status .loading-icon {
+    animation: rotate-infinite 3s linear infinite;
+}
+
+@keyframes rotate-infinite {
+  from {
+    transform: rotate(0deg); /* Starting rotation */
+  }
+  to {
+    transform: rotate(360deg); /* Ending rotation (full circle) */
+  }
+}
+
 #aiAssistantBtn {
     display: flex;
     gap: 6px;
-    padding: 8px 12px;
+}
+
+#aiAssistantBtn span {
+    line-height: 1;
+    position: relative;
+    top: 2px;
 }
 
 .toastui-editor-md-code-block-line-background,
@@ -813,6 +853,44 @@ del:has(+ del + del)+del+del {
     transform: scale(-1, 1);
 }
 
+/*== start of code for tooltips ==*/
+.tool {
+    /* cursor: help; */
+    position: relative;
+}
+
+
+/*== common styles for both parts of tool tip ==*/
+.tool::after {
+    left: 50%;
+    opacity: 0;
+    position: absolute;
+    z-index: -100;
+    font-size: 0.8rem;
+}
+
+.tool:hover::after {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    z-index: 100; 
+}
+
+/*== speech bubble ==*/
+.tool::after {
+    background: #3E474F;
+    border-radius: 5px;
+    top: 100%;
+    color: #EDEFF0;
+    content: attr(data-tip);
+    margin-left: -100%;
+    padding: 0.5em;
+    transition: all .5s cubic-bezier(.84,-0.18,.31,1.26) 0s;
+    transform:  scale(.6) translateY(-50%);
+    width: fit-content;
+    min-width: max-content;
+    line-height: 1;
+}
+
 @media (min-width: 992px) {
     .dropdown:hover .dropdown-content {
         display: block;
@@ -837,6 +915,10 @@ del:has(+ del + del)+del+del {
     }
 
     #aiAssistantBtn span {
+        display: none;
+    }
+
+    .tool::after {
         display: none;
     }
 }

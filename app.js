@@ -1,7 +1,59 @@
-const appVersion = '1.2.12';
+const appVersion = '1.2.13';
 document.getElementById('version').textContent = appVersion;
 
+let currentFileHandle = null;
+
 const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+const SaveIconBtn = document.querySelector('#autoSaveIconBtn');
+const SaveIconBtnIcon = document.querySelector('#autoSaveIconBtn .status');
+const directionIconBtn = document.getElementById('directionBtn');
+
+const rtlIcon = `
+<svg fill="currentColor" width="16" height="16" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg">
+    <path d="M822.456 787.786h33.337v447.22h168.8V168.89h196.652v1066.115h168.8V168.89h171.331V0h-738.92C605.379 0 428.73 176.659 428.73 393.85c0 217.277 176.65 393.936 393.726 393.936m949.528 650.39H523.268l193.65-193.592-119.416-119.38-397.518 397.398L597.502 1920l119.416-119.38-193.65-193.59h1248.716v-168.855Z" fill-rule="evenodd" />
+</svg>
+`;
+
+const ltrIcon = `
+<svg fill="currentColor" width="16" height="16" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg">
+    <path d="M306.205 1607.01h1290.597l-193.598 193.603L1522.588 1920 1920 1522.577l-397.412-397.423-119.384 119.387 193.598 193.604H306.205v168.864Zm389.661-819.34h33.35v447.153h168.86V168.865h196.722v1065.958h168.86V168.865h171.393V0H695.866C478.712 0 302 176.632 302 393.792c0 217.245 176.712 393.877 393.866 393.877" fill-rule="evenodd"/>
+</svg>
+`;
+
+const checkIcon = `
+<svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M20 6L9 17L4 12" stroke="var(--bg-color)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20 6L9 17L4 12" stroke="#00b700" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+`;
+
+const closeIcon = `
+<svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M18 6L6 18M6 6L18 18" stroke="var(--bg-color)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 6L6 18M6 6L18 18" stroke="#ff175e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+`;
+
+const loadingIcon = `
+<svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="loading-icon">
+<path d="M12 2V6M12 18V22M6 12H2M22 12H18M19.0784 19.0784L16.25 16.25M19.0784 4.99994L16.25 7.82837M4.92157 19.0784L7.75 16.25M4.92157 4.99994L7.75 7.82837" stroke="var(--bg-color)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12 2V6M12 18V22M6 12H2M22 12H18M19.0784 19.0784L16.25 16.25M19.0784 4.99994L16.25 7.82837M4.92157 19.0784L7.75 16.25M4.92157 4.99994L7.75 7.82837" stroke="#00b2ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+`;
+
+function changeSaveIconBtnIcon(status = "loading") {
+  if (status == 'loading') {
+    SaveIconBtnIcon.innerHTML = loadingIcon;
+    SaveIconBtn.setAttribute('data-tip', 'Auto Save is Enable');
+  } else if (status == 'saved') {
+    SaveIconBtnIcon.innerHTML = checkIcon;
+    SaveIconBtn.setAttribute('data-tip', 'Auto Save is Enable');
+  } else {
+    SaveIconBtnIcon.innerHTML = closeIcon;
+    SaveIconBtn.setAttribute('data-tip', 'Auto Save is Disable');
+  }
+}
 
 let languageDetectionString = "";
 function detectLanguageByScript(text) {
@@ -87,7 +139,11 @@ const detectAndSetLanguage = debounce(() => {
       testLog('No unique script detected, defaulting to English.');
     }
   }
-}, 3000); // Wait 1 second after user stops typing
+}, 3000); // Wait 3 second after user stops typing
+
+const autoSaveOnChangeFunc = debounce(() => {
+  autoSaveFunc();
+}, 3000); // Wait 3 second after user stops typing
 
 
 // Alert timeout
@@ -137,6 +193,8 @@ const editor = new Editor({
         if(!toggleDisableSpellCheck.checked) {
           detectAndSetLanguage();
         }
+
+        autoSaveOnChangeFunc();
       },
     //   focus: () => {
     //     document.body.classList.add('editor-focused');
@@ -196,9 +254,15 @@ let openedFileName = '';
 toggleAutosave.addEventListener('change', (e) => {
   if (e.target.checked) {
     showAlert('Autosave is enabled. Your changes will be saved automatically every 10 seconds.');
+    autoSaveFunc();
   } else {
     showAlert('Autosave is disabled.');
+    changeSaveIconBtnIcon('disable');
   }
+});
+
+SaveIconBtn.addEventListener('click', (e) => {
+  toggleAutosave.click();
 });
 
 function updateDirection() {
@@ -211,6 +275,17 @@ function updateDirection() {
 toggleDirectionBtn.addEventListener('change', () => {
   isRTL = !isRTL;
   updateDirection();
+});
+
+directionIconBtn.addEventListener('click', () => {
+  toggleDirectionBtn.click();
+  console.log(isRTL);
+  if (isRTL) {
+    directionIconBtn.innerHTML = ltrIcon;
+  } else {
+    directionIconBtn.innerHTML = rtlIcon;
+  }
+  
 });
 
 // Initialize Direction from localStorage
@@ -286,8 +361,6 @@ function saveAs(blob, filename) {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
-
-let currentFileHandle = null;
 
 if ('launchQueue' in window) {
   launchQueue.setConsumer(async (launchParams) => {
@@ -643,10 +716,13 @@ right: 0;
   }
 });
 
-// Autosave functionality
-setInterval(async () => {
-  if (!toggleAutosave.checked) return;
+async function autoSaveFunc() {
+  if (!toggleAutosave.checked) {
+    changeSaveIconBtnIcon('disable');
+    return;
+  }
   try {
+    changeSaveIconBtnIcon('loading');
     const content = editor.getMarkdown();
     if (currentFileHandle) {
       const writable = await currentFileHandle.createWritable();
@@ -657,11 +733,20 @@ setInterval(async () => {
       localStorage.setItem('autosave', content);
       // showAlert('Autosaved to local storage.');
     }
-    
+
     lastSavedContent = editor.getMarkdown();
+    setTimeout(() => {
+      changeSaveIconBtnIcon('saved');
+    }, 1000);
   } catch (err) {
     showAlert(`Autosave failed: ${err.message}`);
+    changeSaveIconBtnIcon('disable');
   }
+}
+
+// Autosave functionality
+setInterval(async () => {
+  autoSaveFunc();
 }, 10000);
 
 // Load autosaved content
@@ -669,22 +754,33 @@ const autosave = localStorage.getItem('autosave');
 // console.log(autosave);
 
 // On Page Load
-if (sessionStorage.getItem('newFile')) {
-  editor.setMarkdown(''); // Or skip loading from localStorage
-  sessionStorage.removeItem('newFile');
-} else {
-  if (autosave) {
-    // console.log('Autosaved content found.');
-
-    editor.setMarkdown(autosave);
-    showAlert('Autosaved content loaded.');
-    toggleAutosave.checked = true;
+// 1. On Load: Check for emergency recovery data
+window.addEventListener('load', () => {
+  const emergencySave = localStorage.getItem('emergency_save');
+  if (emergencySave) {
+    if (confirm("We found unsaved work from your last session. Restore it?")) {
+      editor.setMarkdown(emergencySave);
+      // lastSavedContent = emergencySave; // Or prompt them to save it manually
+    }
+    localStorage.removeItem('emergency_save');
   } else {
-    // console.log('No autosaved content found.');
-    toggleAutosave.checked = false;
-    editor.setMarkdown('');
+    if (autosave) {
+      // console.log('Autosaved content found.');
+
+      editor.setMarkdown(autosave);
+      showAlert('Autosaved content loaded.');
+      toggleAutosave.checked = true;
+      changeSaveIconBtnIcon('saved');
+    } else {
+      // console.log('No autosaved content found.');
+      if (!toggleAutosave.checked) {
+        // toggleAutosave.checked = false;
+        editor.setMarkdown('');
+        changeSaveIconBtnIcon('disable');
+      }
+    }
   }
-}
+});
 
 // Handle PWA file launches
 window.addEventListener('DOMContentLoaded', () => {
@@ -1422,152 +1518,40 @@ async function generateContent(prompt) {
 /////////////////////////////////////////////////////// End of AI Codes
 ///////////////////////////////////////////////////////
 
-
-// // The event listener for closing the window/tab
-// function hasUnsavedChanges() {
-//   return editor.getMarkdown().trim() !== lastSavedContent.trim();
-// }
-
-// // Always warn before tab close or app close (works on desktop & mobile)
-// // window.addEventListener('beforeunload', (event) => {
-// //   if (!hasUnsavedChanges()) return;
-// //   event.preventDefault();
-// //   event.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-// // });
-
-// // Mobile/PWA: intercept browser back button
-// if (isMobile) {
-//   window.history.pushState({ page: 1 }, '', '');
-
-//   window.addEventListener('popstate', (event) => {
-//     if (hasUnsavedChanges()) {
-//       const confirmExit = confirm('You have unsaved changes. Exit without saving?');
-//       if (!confirmExit) {
-//         // Restore history state so back still triggers confirmation
-//         window.history.pushState({ page: 1 }, '', '');
-//         return;
-//       }
-//     }
-//     // Allow normal back navigation
-//     // history.back();
-//     history.go(-1);
-//   });
-// } else {
-//   // Desktop exit confirmation
-//   window.addEventListener('beforeunload', (event) => {
-//     if (!hasUnsavedChanges()) return;
-//     event.preventDefault();
-//     event.returnValue = 'Exit?'; // Needed for Chrome
-//   });
-// }
-
 function hasUnsavedChanges() {
   return editor.getMarkdown().trim() !== lastSavedContent.trim();
 }
 
-// (function() {
-//   let confirmationActive = false; // To prevent multiple confirm dialogs in a row
-
-
-
-//   // === Desktop: beforeunload for close/refresh/navigation ===
-//   if (!isMobile) {
-//     window.addEventListener('beforeunload', (event) => {
-//       if (!hasUnsavedChanges()) return;
-//       event.preventDefault();
-//       event.returnValue = ''; // Chrome requires returnValue to trigger confirmation
-//     });
-//     return; // Desktop done here
-//   }
-
-//   // === Mobile/PWA: intercept back button with popstate + beforeunload for tab close ===
-
-//   // Push initial history state to trap back button
-//   window.history.pushState({ page: 1 }, '', '');
-
-//   window.addEventListener('popstate', (event) => {
-//     if (confirmationActive) {
-//       // If a confirmation dialog is already open, do nothing to avoid stacking dialogs
-//       window.history.pushState({ page: 1 }, '', '');
-//       return;
-//     }
-
-//     if (!hasUnsavedChanges()) {
-//       // No unsaved changes → allow normal back navigation
-//       confirmationActive = false;
-//       history.back();
-//       // history.go(-1);
-//       return;
-//     }
-
-//     confirmationActive = false; // Lock to prevent multiple dialogs
-
-//     const leave = confirm('You have unsaved changes. Exit without saving?');
-
-//     if (!leave) {
-//       // User cancelled exit, restore state to keep intercepting back button
-//       window.history.pushState({ page: 1 }, '', '');
-//       confirmationActive = false;
-//     } else {
-//       // User confirmed exit, allow back navigation
-//       confirmationActive = false;
-//       history.back();
-//       // history.go(-1);
-//     }
-//   });
-
-//   // Also handle tab/window close on mobile
-//   window.addEventListener('beforeunload', (event) => {
-//     if (!hasUnsavedChanges()) return;
-//     event.preventDefault();
-//     event.returnValue = ''; // Trigger native confirmation dialog
-//   });
-
-// })();
-
-
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+let confirmationActive = false;
 
 if (isMobile) {
   if (isStandalone) {
-    // Installed PWA on mobile: intercept back button via popstate
-    // window.history.pushState({ page: 1 }, '', '');
-    window.history.pushState({}, '');
-
-    window.addEventListener('popstate', (event) => {
-      if (!hasUnsavedChanges()) {
-        history.back();
-        history.go(-1);
-        window.close();
-        return;
+    // 5. For PWAs and Mobile: The "Last Gasp" Silent Save
+    function finalSaveAttempt() {
+      if (toggleAutosave.checked == false && hasUnsavedChanges()) {
+        localStorage.setItem("emergency_save", editor.getMarkdown());
       }
-
-      const leave = confirm('You have unsaved changes. Exit without saving?');
-      if (!leave) {
-        // Cancel exit, restore history state
-        // window.history.pushState({ page: 1 }, '', '');
-        window.history.pushState({}, '');
-      } else {
-        history.back();
-        history.go(-1);
-        window.close();
+    }
+    window.addEventListener("pagehide", finalSaveAttempt);
+    window.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        finalSaveAttempt();
       }
     });
-
-    // No beforeunload confirmation here because it's not supported
   } else {
     // Mobile browser: rely on beforeunload native confirmation (no history trick)
-    window.addEventListener('beforeunload', (event) => {
+    window.addEventListener("beforeunload", (event) => {
       if (!hasUnsavedChanges()) return;
       event.preventDefault();
-      event.returnValue = ''; // triggers native confirm
+      event.returnValue = ""; // triggers native confirm
     });
   }
 } else {
   // Desktop: standard beforeunload confirmation
-  window.addEventListener('beforeunload', (event) => {
+  window.addEventListener("beforeunload", (event) => {
     if (!hasUnsavedChanges()) return;
     event.preventDefault();
-    event.returnValue = '';
+    event.returnValue = "";
   });
 }
