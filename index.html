@@ -307,8 +307,35 @@
                     scope: './'
                 })
                 .then(registration => {
+                    // Periodically check for updates
                     setInterval(() => registration.update(), 3600000);
+
+                    // Listen for new service worker installing
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        if (newWorker) {
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed') {
+                                    if (navigator.serviceWorker.controller) {
+                                        // A new update is available
+                                        if (confirm('A new version of this app is available.\nRestart now to update?')) {
+                                            newWorker.postMessage({
+                                                action: 'skipWaiting'
+                                            });
+                                        } else {
+                                            console.log('User deferred update');
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    });
                 });
+
+            // When the new service worker takes control, reload the page
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                window.location.reload();
+            });
         }
     </script>
 </body>

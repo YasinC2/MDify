@@ -1,4 +1,4 @@
-const appVersion = '1.2.13';
+const appVersion = '1.2.14';
 document.getElementById('version').textContent = appVersion;
 
 let currentFileHandle = null;
@@ -861,51 +861,50 @@ function popupAlert(message) {
 }
 
 function extractSafeFilenameFromContent(type = 'md') {
+  const maxBytes = 80; // limit for UTF-8 bytes (safe on Android FS)
   const maxWords = 12;
-  const maxLength = 85;
   const now = Date.now();
   let clean;
   let fileNameInputValue = fileNameInput.value.trim();
 
-  if (fileNameInputValue != "" && fileNameInputValue != "Untitled Document") {
-    // Remove Markdown characters and invalid filename characters
-    clean = fileNameInputValue
-      .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
-      .replace(/^#+\s*/, '') // Remove Markdown headers
-      .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
-      .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
+  // Remove Markdown and filesystem-unsafe characters
+  const sanitize = str => {
+    return str
+      .replace(/^[-*+]\s+/, '')          // Remove list markers
+      .replace(/^#+\s*/, '')             // Remove Markdown headers
+      .replace(/[*_`>#]+/g, '')           // Remove Markdown symbols
+      .replace(/[<>:"/\\|?*]+/g, '-')     // Replace illegal filename chars
+      .replace(/[\u200B-\u200F\u202A-\u202E]/g, '') // Remove ZWSP & directional marks
+      .replace(/\s+/g, ' ')               // Normalize spaces
       .trim();
+  };
+
+  // Pick source text: filename input or first line of content
+  if (fileNameInputValue && fileNameInputValue !== "Untitled Document") {
+    clean = sanitize(fileNameInputValue);
   } else {
     const content = editor.getMarkdown().trim();
-    const firstLine = content
-      .split('\n')
-      .find(line => line.trim().length > 0) || 'Untitled Document';
-
-    // Remove Markdown characters and invalid filename characters
-    clean = firstLine
-      .replace(/^[-*+]\s+/, '') // Remove list markers at start of line
-      .replace(/^#+\s*/, '') // Remove Markdown headers
-      .replace(/[*_`>#]+/g, '') // Remove other Markdown symbols
-      .replace(/[<>:"/\\|?*]+/g, '') // Remove illegal filename chars
-      .trim();
+    const firstLine = content.split('\n').find(line => line.trim().length > 0) || 'Untitled Document';
+    clean = sanitize(firstLine);
   }
 
-  // Limit to a few words
+  // Normalize Unicode (avoids weird multi-byte combining sequences)
+  clean = clean.normalize('NFC');
+
+  // Limit words
   const words = clean.split(/\s+/).slice(0, maxWords);
-  clean = words.join('-');
+  clean = words.join(' ');
 
-  // Limit total length
-  if (clean.length > maxLength) {
-    clean = clean.substring(0, maxLength).replace(/-+$/, '');
+  // Limit byte length (UTF-8)
+  while (new TextEncoder().encode(clean).length > maxBytes) {
+    clean = clean.slice(0, -1).trim();
   }
 
-  if (clean == 'Untitled-Document') {
-    clean = clean + '-' + now;
-  }
-  // console.log(clean);
+  if (!clean || clean == 'Untitled-Document' || clean == 'Untitled Document') clean = 'Untitled Document-' + now;
 
   return `${clean}.${type}`;
 }
+
 
 function setFileNameValue(fileName) {
   function cleanFileName(name) {
