@@ -1,4 +1,4 @@
-const appVersion = '1.2.14';
+const appVersion = '1.2.15';
 document.getElementById('version').textContent = appVersion;
 
 let currentFileHandle = null;
@@ -287,6 +287,12 @@ directionIconBtn.addEventListener('click', () => {
   }
   
 });
+
+if (isRTL) {
+  directionIconBtn.innerHTML = rtlIcon;
+} else {
+  directionIconBtn.innerHTML = ltrIcon;
+}
 
 // Initialize Direction from localStorage
 const savedDirection = localStorage.getItem('editorDirection');

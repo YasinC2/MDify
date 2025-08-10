@@ -1,4 +1,4 @@
-const CACHE_NAME = 'MDify-v1.2.14';
+const CACHE_NAME = 'MDify-v1.2.15';
 const OFFLINE_PAGE = 'index.html';
 const ASSETS = [
   'index.html',
@@ -80,5 +80,11 @@ self.addEventListener('fetch', (event) => {
       caches.match(event.request)
         .then(cachedResponse => cachedResponse || fetch(event.request))
     );
+  }
+});
+
+self.addEventListener('message', event => {
+  if (event.data.action === 'skipWaiting') {
+    self.skipWaiting();
   }
 });
