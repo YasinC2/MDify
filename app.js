@@ -1,4 +1,4 @@
-const appVersion = '1.2.15';
+const appVersion = '1.2.16';
 document.getElementById('version').textContent = appVersion;
 
 let currentFileHandle = null;
