@@ -36,6 +36,7 @@
                         <svg width="16px" height="16px" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M1 6H24M1 14H24M1 22H24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
+                        <span class="badge menu-badge" id="menuBadge" style="display: none;"></span>
                     </button>
                     <div class="dropdown-content">
                         <button id="newMd">New</button>
@@ -74,6 +75,17 @@
                         <a href="https://github.com/YasinC2/MDify/issues" target="_blank" class="dropdown-item">
                             <span>Report Issue</span>
                         </a>
+                        <div class="update-install-container" id="updateInstallContainer" style="display: none;">
+                            <hr>
+                            <button id="updateApp" style="display: none;">
+                                Update App
+                                <span class="badge button-badge"></span>
+                            </button>
+                            <button id="installApp" style="display: none;">
+                                Install App
+                                <span class="badge button-badge"></span>
+                            </button>
+                        </div>
                         <hr>
                         <p class="dropdown-item version-info">
                             <span>Version: </span>
@@ -298,30 +310,43 @@
 
     <script src="app.js" defer></script>
     <script>
+        const installAppBtn = document.getElementById('installApp');
+        const updateAppBtn = document.getElementById('updateApp');
+        const menuBadge = document.getElementById('menuBadge');
+        const updateInstallContainer = document.getElementById('updateInstallContainer');
+
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js', {
                     scope: './'
                 })
                 .then(registration => {
                     // Periodically check for updates
-                    setInterval(() => registration.update(), 3600000);
+                    // setInterval(() => registration.update(), 60 * 60 * 1000);
+                    setInterval(() => registration.update(), 2000);
 
                     // Listen for new service worker installing
                     registration.addEventListener('updatefound', () => {
+                        console.log("updatefound");
+                        
                         const newWorker = registration.installing;
                         if (newWorker) {
                             newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed') {
-                                    if (navigator.serviceWorker.controller) {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New version ready — show Update button + badge
+                                    updateInstallContainer.style.display = 'block';
+                                    updateAppBtn.style.display = 'block';
+                                    menuBadge.style.display = 'block';
+
+                                    updateAppBtn.addEventListener('click', () => {
                                         // A new update is available
-                                        if (confirm('A new version of this app is available.\nRestart now to update?\n\n* Make sure your works are saved!')) {
+                                        if (confirm('Restart now to update?\n\n* Make sure you saved your works before updating!')) {
                                             newWorker.postMessage({
                                                 action: 'skipWaiting'
                                             });
                                         } else {
                                             console.log('User deferred update');
                                         }
-                                    }
+                                    });
                                 }
                             });
                         }
@@ -333,6 +358,35 @@
                 window.location.reload();
             });
         }
+
+        let deferredPrompt;
+
+        // Listen for install prompt availability
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // e.preventDefault();
+            deferredPrompt = e;
+
+            // Show Install menu item + badge
+            updateInstallContainer.style.display = 'block';
+            installAppBtn.style.display = 'block';
+            menuBadge.style.display = 'block';
+        });
+
+        // Handle install click
+        installAppBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+
+            deferredPrompt.prompt();
+            const {
+                outcome
+            } = await deferredPrompt.userChoice;
+            console.log(`Install outcome: ${outcome}`);
+
+            deferredPrompt = null;
+            updateInstallContainer.style.display = 'none';
+            installAppBtn.style.display = 'none';
+            menuBadge.style.display = 'none';
+        });
     </script>
 </body>
 

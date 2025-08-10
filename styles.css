@@ -371,6 +371,26 @@ button:not(.toastui-editor-toolbar-icons):hover {
     transition: 0.3s;
 }
 
+.badge {
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 100%;
+    background: red;
+    position: absolute;
+}
+
+.menu-badge {
+    top: -3px;
+    right: -3px;
+}
+
+.button-badge {
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .dropbtn {
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -379,6 +399,7 @@ button:not(.toastui-editor-toolbar-icons):hover {
     border-radius: 4px;
     cursor: pointer;
     line-height: 0;
+    position: relative;
 }
 
 .dropdown-content {
@@ -410,6 +431,7 @@ button:not(.toastui-editor-toolbar-icons):hover {
     text-align: left;
     border-radius: 0;
     line-height: 1.4;
+    position: relative;
 }
 
 .dropdown-content button:hover,
@@ -477,12 +499,15 @@ button:not(.toastui-editor-toolbar-icons):hover {
 }
 
 @keyframes rotate-infinite {
-  from {
-    transform: rotate(0deg); /* Starting rotation */
-  }
-  to {
-    transform: rotate(360deg); /* Ending rotation (full circle) */
-  }
+    from {
+        transform: rotate(0deg);
+        /* Starting rotation */
+    }
+
+    to {
+        transform: rotate(360deg);
+        /* Ending rotation (full circle) */
+    }
 }
 
 #aiAssistantBtn {
@@ -872,7 +897,7 @@ del:has(+ del + del)+del+del {
 .tool:hover::after {
     opacity: 1;
     transform: scale(1) translateY(0);
-    z-index: 100; 
+    z-index: 100;
 }
 
 /*== speech bubble ==*/
@@ -884,8 +909,8 @@ del:has(+ del + del)+del+del {
     content: attr(data-tip);
     margin-left: -100%;
     padding: 0.5em;
-    transition: all .5s cubic-bezier(.84,-0.18,.31,1.26) 0s;
-    transform:  scale(.6) translateY(-50%);
+    transition: all .5s cubic-bezier(.84, -0.18, .31, 1.26) 0s;
+    transform: scale(.6) translateY(-50%);
     width: fit-content;
     min-width: max-content;
     line-height: 1;

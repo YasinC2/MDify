@@ -289,9 +289,9 @@ directionIconBtn.addEventListener('click', () => {
 });
 
 if (isRTL) {
-  directionIconBtn.innerHTML = rtlIcon;
-} else {
   directionIconBtn.innerHTML = ltrIcon;
+} else {
+  directionIconBtn.innerHTML = rtlIcon;
 }
 
 // Initialize Direction from localStorage

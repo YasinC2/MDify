@@ -1,7 +1,7 @@
 {
   "name": "MDify",
   "short_name": "MDify",
-  "description": "Progressive Web App for Markdown editing with RTL support",
+  "description": "Progressive Web App for Markdown editing with RTL support & AI Assistant",
   "start_url": "/MDify/",
   "scope": "/MDify/",
   "id": "/MDify/",
