@@ -1,4 +1,4 @@
-const appVersion = '1.3.17';
+const appVersion = '1.3.1';
 document.getElementById('version').textContent = appVersion;
 
 let currentFileHandle = null;
@@ -1678,8 +1678,10 @@ function renderAutosaveSidebar() {
         // Load draft into editor
         if (hasUnsavedChanges() && !confirm('Unsaved changes will be lost. Continue?')) return;
         
+        currentFileHandle = null;
         editor.setMarkdown(draft.content);
-        fileNameInput.value = draft.name;
+        // fileNameInput.value = draft.name;
+        setFileNameValue(draft.name);
         currentDraftId = draft.id;
         autosaveSidebar.classList.remove('open');
         autosaveSidebarOverlay.style.display = 'none';
