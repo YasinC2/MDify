@@ -472,7 +472,8 @@ button:not(.toastui-editor-toolbar-icons):hover {
     cursor: default;
 }
 
-.right-controls button {
+.right-controls button,
+.icon-btn {
     padding: 8px;
     line-height: 0;
     display: flex;
@@ -550,11 +551,19 @@ button:not(.toastui-editor-toolbar-icons):hover {
 [dir="rtl"] .toastui-editor-contents menu,
 [dir="rtl"] .toastui-editor-contents ol,
 [dir="rtl"] .toastui-editor-contents ul {
+    padding-left: 0;
     padding-right: 24px;
 }
 
+[dir="rtl"] .toastui-editor-contents ol>li:before,
 [dir="rtl"] .toastui-editor-contents ul>li:before {
     margin-right: -17px;
+    direction: ltr;
+}
+
+[dir="rtl"] .toastui-editor-contents blockquote {
+    border-left: 0;
+    border-right: 4px solid #e5e5e5;
 }
 
 /* ///////////////////////////////////  End RTL Override CSS  /////////////////////////////////// */
@@ -878,6 +887,194 @@ del:has(+ del + del)+del+del {
     transform: scale(-1, 1);
 }
 
+/* Autosave Sidebar */
+.autosave-sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100%;
+    background: var(--toolbar-bg);
+    border-right: 1px solid var(--border-color);
+    z-index: 1000;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+#autosaveSidebarOverlay {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.5);
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: block;
+    z-index: 100 !important;
+    display: none;
+}
+
+.autosave-sidebar.open {
+    left: 0;
+}
+
+.sidebar-header {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    direction: ltr;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-color);
+    line-height: 1;
+}
+
+.drafts-list {
+    flex: 1;
+    overflow-y: auto;
+    /* padding: 10px; */
+}
+
+.draft-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.draft-item:hover {
+    background: var(--hover-bg);
+}
+
+.draft-item.selected {
+    background: rgba(0, 123, 255, 0.1);
+}
+
+.draft-item h4 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+}
+
+.draft-preview {
+    font-size: 13px;
+    color: var(--text-color-note);
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.draft-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-color-note);
+    direction: ltr;
+}
+
+.draft-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 5px;
+}
+
+.delete-draft {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 3px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.sidebar-footer {
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
+    direction: ltr;
+}
+
+#storageUsage {
+    font-size: 13px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.sidebar-footer-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.clear-all {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+}
+
+button.clear-all:hover,
+button.delete-draft:hover {
+    background: #b63232 !important;
+}
+
+.backup-dropdown {
+    position: relative;
+    flex: 1;
+}
+
+.backup-btn {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.backup-options {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    display: none;
+    flex-direction: column;
+    z-index: 10;
+}
+
+.backup-dropdown:hover .backup-options {
+    display: flex;
+}
+
+.backup-options button {
+    padding: 8px;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.backup-options button:hover {
+    background: var(--hover-bg);
+}
+
 /*== start of code for tooltips ==*/
 .tool {
     /* cursor: help; */
@@ -906,7 +1103,7 @@ del:has(+ del + del)+del+del {
     border-radius: 5px;
     top: 100%;
     color: #EDEFF0;
-    content: attr(data-tip);
+    content: attr(data-tooltip);
     margin-left: -100%;
     padding: 0.5em;
     transition: all .5s cubic-bezier(.84, -0.18, .31, 1.26) 0s;

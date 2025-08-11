@@ -1,7 +1,77 @@
-const appVersion = '1.2.16';
+const appVersion = '1.3.17';
 document.getElementById('version').textContent = appVersion;
 
 let currentFileHandle = null;
+let skipAutosaveLoad = false;
+let currentDraftId = null;
+
+// Autosave Collection Functions
+function loadAutosaveCollection() {
+  const collectionJSON = localStorage.getItem('autosaveCollection');
+  return collectionJSON ? JSON.parse(collectionJSON) : [];
+}
+
+function saveAutosaveCollection(collection) {
+  localStorage.setItem('autosaveCollection', JSON.stringify(collection));
+}
+
+function addOrUpdateDraft(id, name, content) {
+  const collection = loadAutosaveCollection();
+  const timestamp = Date.now();
+  const size = content.length;
+  const preview = content
+    .replace(/[#*_>`~]/g, '') // Strip markdown symbols
+    .substring(0, 50)
+    .trim() + (content.length > 50 ? '...' : '');
+
+  const draftIndex = collection.findIndex(draft => draft.id === id);
+  
+  if (draftIndex !== -1) {
+    // Update existing draft
+    collection[draftIndex] = {
+      ...collection[draftIndex],
+      name,
+      preview,
+      content,
+      timestamp,
+      size
+    };
+  } else {
+    // Create new draft
+    collection.push({
+      id,
+      name: name || `Untitled Document-${timestamp}`,
+      preview,
+      content,
+      timestamp,
+      size
+    });
+  }
+  
+  saveAutosaveCollection(collection);
+  return id;
+}
+
+function deleteDraft(id) {
+  const collection = loadAutosaveCollection();
+  const newCollection = collection.filter(draft => draft.id !== id);
+  saveAutosaveCollection(newCollection);
+  
+  if (currentDraftId === id) {
+    currentDraftId = null;
+  }
+}
+
+function clearAllDrafts() {
+  localStorage.removeItem('autosaveCollection');
+  currentDraftId = null;
+}
+
+function getLocalStorageSize() {
+  const total = 5120; // 5MB in KB
+  const used = Math.round((JSON.stringify(localStorage).length / 1024) * 100) / 100;
+  return { used, total };
+}
 
 const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
@@ -178,12 +248,12 @@ const editor = new Editor({
       tableMergedCell,
       uml
     ],
-    hooks: {
-        async 'addImageBlobHook'(blob, callback) {
-            // Handle image uploads
-            callback('https://via.placeholder.com/150');
-        }
-    },
+    // hooks: {
+    //     async 'addImageBlobHook'(blob, callback) {
+    //         // Handle image uploads
+    //         callback('https://via.placeholder.com/150');
+    //     }
+    // },
     events: {
       // load: () => {
       //   console.log('Editor loaded');
@@ -468,6 +538,7 @@ document.getElementById('openMd').addEventListener('click', async () => {
 
   try {
     // Show native file picker
+    skipAutosaveLoad = true; // prevent replacing with autosave
     const [handle] = await window.showOpenFilePicker({
       types: [{
         description: 'Markdown Files',
@@ -538,7 +609,7 @@ document.getElementById('newMd').addEventListener('click', () => {
   document.getElementById('fileInput').value = '';
   currentFileHandle = null;
   editor.setMarkdown('');
-  fileNameInput.value = "Untitled Document";
+  fileNameInput.value = "Untitled Document " + Date.now();
   localStorage.removeItem('autosave');
   sessionStorage.clear();
   // document.title = "MDify | New Document";
@@ -567,7 +638,7 @@ document.getElementById('exportHtml').addEventListener('click', async () => {
 
     const html = `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ${isRTL ? 'dir="rtl"' : ''}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -649,11 +720,28 @@ document.getElementById('exportStyledHtml').addEventListener('click', async () =
 left: auto;
 right: 0;
 }
+[dir="rtl"] blockquote {
+    border-left: 0;
+    border-right: 4px solid #e5e5e5;
+}
+[dir="rtl"] dir,
+[dir="rtl"] menu,
+[dir="rtl"] ol,
+[dir="rtl"] ul {
+    padding-left: 0;
+    padding-right: 24px;
+}
+
+[dir="rtl"] ul>li:before,
+[dir="rtl"] ol>li:before {
+    direction: ltr;
+    margin-right: -17px;
+}
     `;
     
     const html = `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ${isRTL ? 'dir="rtl"' : ''}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -730,16 +818,24 @@ async function autoSaveFunc() {
   try {
     changeSaveIconBtnIcon('loading');
     const content = editor.getMarkdown();
+    
+    // If we have a file handle, save to file
     if (currentFileHandle) {
       const writable = await currentFileHandle.createWritable();
       await writable.write(content);
       await writable.close();
-      // showAlert('Autosaved to current file.');
     } else {
-      localStorage.setItem('autosave', content);
-      // showAlert('Autosaved to local storage.');
+      if (content.trim() != "") {
+        // Always update the draft collection
+        const name = fileNameInput.value || "Untitled Document" + Date.now();
+        if (!currentDraftId) {
+          // Create new draft if none exists
+          currentDraftId = `draft-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        }
+        addOrUpdateDraft(currentDraftId, name, content);
+      }
     }
-
+    
     lastSavedContent = editor.getMarkdown();
     setTimeout(() => {
       changeSaveIconBtnIcon('saved');
@@ -755,38 +851,6 @@ setInterval(async () => {
   autoSaveFunc();
 }, 10000);
 
-// Load autosaved content
-const autosave = localStorage.getItem('autosave');
-// console.log(autosave);
-
-// On Page Load
-// 1. On Load: Check for emergency recovery data
-window.addEventListener('load', () => {
-  const emergencySave = localStorage.getItem('emergency_save');
-  if (emergencySave) {
-    if (confirm("We found unsaved work from your last session. Restore it?")) {
-      editor.setMarkdown(emergencySave);
-      // lastSavedContent = emergencySave; // Or prompt them to save it manually
-    }
-    localStorage.removeItem('emergency_save');
-  } else {
-    if (autosave) {
-      // console.log('Autosaved content found.');
-
-      editor.setMarkdown(autosave);
-      showAlert('Autosaved content loaded.');
-      toggleAutosave.checked = true;
-      changeSaveIconBtnIcon('saved');
-    } else {
-      // console.log('No autosaved content found.');
-      if (!toggleAutosave.checked) {
-        // toggleAutosave.checked = false;
-        editor.setMarkdown('');
-        changeSaveIconBtnIcon('disable');
-      }
-    }
-  }
-});
 
 // Handle PWA file launches
 window.addEventListener('DOMContentLoaded', () => {
@@ -795,6 +859,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if (!launchParams.files.length) return;
 
       try {
+        skipAutosaveLoad = true; // prevent replacing with autosave
         const fileHandle = launchParams.files[0];
         const file = await fileHandle.getFile();
         const content = await file.text();
@@ -804,6 +869,32 @@ window.addEventListener('DOMContentLoaded', () => {
         showAlert(`Error opening file: ${error.message}`);
       }
     });
+  }
+});
+
+// Load autosaved content
+const autosave = localStorage.getItem('autosave');
+// console.log(autosave);
+
+// On Page Load
+// 1. On Load: Check for emergency recovery data
+window.addEventListener('DOMContentLoaded', () => {
+  const emergencySave = localStorage.getItem('emergency_save');
+  if (emergencySave) {
+    if (confirm("We found unsaved work from your last session. Restore it?")) {
+      editor.setMarkdown(emergencySave);
+      // lastSavedContent = emergencySave; // Or prompt them to save it manually
+    }
+    localStorage.removeItem('emergency_save');
+  } else {
+    if (!skipAutosaveLoad) {
+      // if (!toggleAutosave.checked) {
+      //   // toggleAutosave.checked = false;
+      //   editor.setMarkdown('');
+      //   changeSaveIconBtnIcon('disable');
+      // }
+      fileNameInput.value = "Untitled Document " + Date.now();
+    }
   }
 });
 
@@ -1522,6 +1613,219 @@ async function generateContent(prompt) {
 ///////////////////////////////////////////////////////
 /////////////////////////////////////////////////////// End of AI Codes
 ///////////////////////////////////////////////////////
+
+// Autosave Sidebar
+const autosaveSidebar = document.getElementById('autosaveSidebar');
+const autosaveSidebarOverlay = document.getElementById('autosaveSidebarOverlay');
+const openAutosaveSidebarBtn = document.getElementById('openAutosaveSidebarBtn');
+const closeAutosaveSidebar = document.getElementById('closeAutosaveSidebar');
+const draftsList = document.getElementById('draftsList');
+const storageUsage = document.getElementById('storageUsage');
+const clearAllDraftsBtn = document.getElementById('clearAllDrafts');
+const exportJsonBtn = document.getElementById('exportJson');
+const exportZipBtn = document.getElementById('exportZip');
+
+// Toggle sidebar
+openAutosaveSidebarBtn.addEventListener('click', () => {
+  renderAutosaveSidebar();
+  autosaveSidebar.classList.add('open');
+  autosaveSidebarOverlay.style.display = 'block';
+});
+
+closeAutosaveSidebar.addEventListener('click', () => {
+  autosaveSidebar.classList.remove('open');
+  autosaveSidebarOverlay.style.display = 'none';
+});
+
+autosaveSidebarOverlay.addEventListener('click', () => {
+  autosaveSidebar.classList.remove('open');
+  autosaveSidebarOverlay.style.display = 'none';
+});
+
+// Render sidebar content
+function renderAutosaveSidebar() {  
+  const collection = loadAutosaveCollection();
+  draftsList.innerHTML = '';
+  
+  // Sort by timestamp descending (most recent first)
+  collection.sort((a, b) => b.timestamp - a.timestamp);
+  
+  collection.forEach(draft => {
+    const draftItem = document.createElement('div');
+    draftItem.className = 'draft-item';
+    if (draft.id === currentDraftId) {
+      draftItem.classList.add('selected');
+    }
+    
+    const date = new Date(draft.timestamp);
+    const formattedDate = date.toLocaleDateString();
+    const formattedTime = date.toLocaleTimeString();
+    
+    draftItem.innerHTML = `
+      <h4>${draft.name}</h4>
+      <div class="draft-preview">${draft.preview}</div>
+      <div class="draft-meta">
+        <span>${(draft.size / 1024).toFixed(2)} KB</span>
+        <span>${formattedDate} ${formattedTime}</span>
+      </div>
+      <div class="draft-actions">
+        <button class="delete-draft" data-id="${draft.id}">Delete</button>
+      </div>
+    `;
+    
+    draftItem.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('delete-draft')) {
+        // Load draft into editor
+        if (hasUnsavedChanges() && !confirm('Unsaved changes will be lost. Continue?')) return;
+        
+        editor.setMarkdown(draft.content);
+        fileNameInput.value = draft.name;
+        currentDraftId = draft.id;
+        autosaveSidebar.classList.remove('open');
+        autosaveSidebarOverlay.style.display = 'none';
+      }
+    });
+    
+    draftsList.appendChild(draftItem);
+  });
+  
+  // Add delete event listeners
+  document.querySelectorAll('.delete-draft').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm('Are you sure you want to delete this draft?')) {
+        deleteDraft(btn.dataset.id);
+        renderAutosaveSidebar();
+        updateStorageUsage();
+      }
+    });
+  });
+  
+  updateStorageUsage();
+}
+
+function updateStorageUsage() {
+  const { used, total } = getLocalStorageSize();
+  storageUsage.textContent = `Used: ${used} KB / ${total} KB`;
+  
+  if ( used >= 4700 ) {
+    alert("Caution: Your localStorage is nearly maxed out—try moving your content into files and clearing out drafts to ensure you have enough space.")
+  }
+}
+
+// Clear all drafts
+clearAllDraftsBtn.addEventListener('click', () => {
+  if (confirm('Are you sure you want to clear all drafts?')) {
+    clearAllDrafts();
+    renderAutosaveSidebar();
+  }
+});
+
+// Export as JSON
+exportJsonBtn.addEventListener('click', () => {
+  const collection = loadAutosaveCollection();
+  const blob = new Blob([JSON.stringify(collection)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `autosaveCollection-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// Import from JSON
+const importJsonBtn = document.getElementById('importJson');
+importJsonBtn.addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      input.remove(); // clean up if no file selected
+      return;
+    }
+
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const importedCollection = JSON.parse(event.target.result);
+          if (!Array.isArray(importedCollection)) {
+            throw new Error('Invalid JSON format: expected an array of drafts');
+          }
+
+          const existingCollection = loadAutosaveCollection();
+          const mergedCollection = [...existingCollection];
+
+          importedCollection.forEach(importedDraft => {
+            // Check if draft with same ID already exists
+            const existingIndex = mergedCollection.findIndex(d => d.id === importedDraft.id);
+
+            if (existingIndex !== -1) {
+              // Regenerate ID to avoid collision
+              importedDraft.id = `draft-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+            }
+            mergedCollection.push(importedDraft);
+          });
+
+          saveAutosaveCollection(mergedCollection);
+          renderAutosaveSidebar();
+          showAlert(`Imported ${importedCollection.length} draft(s) successfully`);
+        } catch (err) {
+          showAlert(`Error parsing JSON: ${err.message}`);
+        } finally {
+          input.remove(); // clean up after reading
+        }
+      };
+      reader.readAsText(file);
+    } catch (err) {
+      showAlert(`Import failed: ${err.message}`);
+      input.remove(); // also clean up if file read fails
+    }
+  });
+
+  input.click();
+});
+
+// Export as ZIP (using JSZip)
+exportZipBtn.addEventListener('click', async () => {
+  try {
+    const JSZip = window.JSZip;
+    if (!JSZip) {
+      throw new Error('JSZip library not loaded');
+    }
+    
+    const collection = loadAutosaveCollection();
+    const zip = new JSZip();
+    
+    collection.forEach(draft => {
+      zip.file(`${draft.name.replace(/[^a-z0-9]/gi, '_')}.md`, draft.content);
+    });
+    
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `autosaveCollection-${new Date().toISOString().slice(0, 10)}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showAlert(`Export failed: ${err.message}`);
+  }
+});
+
+// Initialize sidebar
+document.addEventListener('DOMContentLoaded', () => {
+  renderAutosaveSidebar();
+});
 
 function hasUnsavedChanges() {
   return editor.getMarkdown().trim() !== lastSavedContent.trim();
