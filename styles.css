@@ -511,11 +511,13 @@ button:not(.toastui-editor-toolbar-icons):hover {
     }
 }
 
+.btn-icon-text,
 #aiAssistantBtn {
     display: flex;
     gap: 6px;
 }
 
+.btn-icon-text span,
 #aiAssistantBtn span {
     line-height: 1;
     position: relative;
@@ -929,15 +931,18 @@ del:has(+ del + del)+del+del {
 
 .sidebar-header h3 {
     margin: 0;
+    position: relative;
+    top: 2px;
 }
 
 .close-btn {
     background: none;
     border: none;
-    font-size: 24px;
+    font-size: 20px;
     cursor: pointer;
     color: var(--text-color);
-    line-height: 1;
+    line-height: 0.5;
+    padding: 8px;
 }
 
 .drafts-list {
@@ -1136,6 +1141,7 @@ button.delete-draft:hover {
         display: none !important;
     }
 
+    .btn-icon-text span,
     #aiAssistantBtn span {
         display: none;
     }

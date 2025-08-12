@@ -1,4 +1,4 @@
-const appVersion = '1.3.1';
+const appVersion = '1.3.2';
 document.getElementById('version').textContent = appVersion;
 
 let currentFileHandle = null;
@@ -390,14 +390,16 @@ editorTabModeBtn.checked = savedEditorMode;
 const savedWYSIWYGModeAsDefault = localStorage.getItem('WYSIWYGMode') === 'true';
 WYSIWYGModeBtn.checked = savedWYSIWYGModeAsDefault;
 
-// Save keyboard shortcut
-document.addEventListener('keydown', async (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault();
-    e.stopPropagation();
-    await saveFile();
-  }
-}, true);
+window.addEventListener('DOMContentLoaded', () => {
+  // Save keyboard shortcut
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+      e.preventDefault();
+      e.stopPropagation();
+      saveFile();
+    }
+  }, true);
+});
 
 // Theme management
 const themeToggle = document.getElementById('themeToggle');
@@ -557,6 +559,7 @@ document.getElementById('openMd').addEventListener('click', async () => {
     currentFileHandle = handle;
     showAlert(`Opened: ${file.name}`);
     localStorage.removeItem('autosave');
+    unselectDraftItem();
     // document.title = "MDify | " + file.name.toUpperCase();
     
     setFileNameValue(file.name);
@@ -612,6 +615,7 @@ document.getElementById('newMd').addEventListener('click', () => {
   fileNameInput.value = "Untitled Document " + Date.now();
   localStorage.removeItem('autosave');
   sessionStorage.clear();
+  unselectDraftItem();
   // document.title = "MDify | New Document";
   // sessionStorage.setItem('newFile', '1');
   // location.href = location.href;
@@ -1828,6 +1832,10 @@ exportZipBtn.addEventListener('click', async () => {
 document.addEventListener('DOMContentLoaded', () => {
   renderAutosaveSidebar();
 });
+
+function unselectDraftItem() {
+  currentDraftId = null;
+}
 
 function hasUnsavedChanges() {
   return editor.getMarkdown().trim() !== lastSavedContent.trim();
