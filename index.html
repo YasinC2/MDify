@@ -24,6 +24,23 @@
     <link rel="stylesheet" href="font/vazirmatn-font-face.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
+
+    <!-- JSZip for ZIP export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+    <!-- Editor -->
+    <script src="libs/toastui-editor-all.min.js" defer></script>
+    <!-- Chart -->
+    <script src="libs/toastui-chart.min.js" defer></script>
+    <!-- Color Picker -->
+    <script src="libs/tui-color-picker.min.js" defer></script>
+    <!-- Editor's Plugin -->
+    <script src="libs/toastui-editor-plugin-chart.min.js" defer></script>
+    <script src="libs/toastui-editor-plugin-code-syntax-highlight-all.min.js" defer></script>
+    <script src="libs/toastui-editor-plugin-color-syntax.min.js" defer></script>
+    <script src="libs/toastui-editor-plugin-table-merged-cell.min.js" defer></script>
+    <script src="libs/toastui-editor-plugin-uml.min.js" defer></script>
+    <!-- App JS -->
+    <script src="app.js" defer></script>
 </head>
 
 <body>
@@ -340,25 +357,6 @@
 
     <span class="popup-message" id="aiStatus">Test</span>
 
-    <!-- <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.js"></script> -->
-
-    <!-- JSZip for ZIP export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    
-    <!-- Editor -->
-    <script src="libs/toastui-editor-all.min.js" defer></script>
-    <!-- Chart -->
-    <script src="libs/toastui-chart.min.js" defer></script>
-    <!-- Color Picker -->
-    <script src="libs/tui-color-picker.min.js" defer></script>
-    <!-- Editor's Plugin -->
-    <script src="libs/toastui-editor-plugin-chart.min.js" defer></script>
-    <script src="libs/toastui-editor-plugin-code-syntax-highlight-all.min.js" defer></script>
-    <script src="libs/toastui-editor-plugin-color-syntax.min.js" defer></script>
-    <script src="libs/toastui-editor-plugin-table-merged-cell.min.js" defer></script>
-    <script src="libs/toastui-editor-plugin-uml.min.js" defer></script>
-
-    <script src="app.js" defer></script>
     <script>
         const installAppBtn = document.getElementById('installApp');
         const updateAppBtn = document.getElementById('updateApp');

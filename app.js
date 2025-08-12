@@ -1,4 +1,4 @@
-const appVersion = '1.3.2';
+const appVersion = '1.3.3';
 document.getElementById('version').textContent = appVersion;
 
 let currentFileHandle = null;
@@ -389,17 +389,6 @@ editorTabModeBtn.checked = savedEditorMode;
 
 const savedWYSIWYGModeAsDefault = localStorage.getItem('WYSIWYGMode') === 'true';
 WYSIWYGModeBtn.checked = savedWYSIWYGModeAsDefault;
-
-window.addEventListener('DOMContentLoaded', () => {
-  // Save keyboard shortcut
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
-      e.preventDefault();
-      e.stopPropagation();
-      saveFile();
-    }
-  }, true);
-});
 
 // Theme management
 const themeToggle = document.getElementById('themeToggle');
@@ -1873,4 +1862,35 @@ if (isMobile) {
     event.preventDefault();
     event.returnValue = "";
   });
+}
+
+// Attaches the keyboard shortcut listener for saving (Ctrl+S or Cmd+S).
+function setupSaveShortcut() {
+  function handleSaveShortcut(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      // Prevent the default browser "Save As..." dialog.
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      // e.stopPropagation();
+      console.log("Save shortcut triggered. Calling saveFile().");
+      saveFile(); // Assuming saveFile() is defined elsewhere
+      return false;
+    }
+  }
+
+  // Add the listener to the document.
+  document.addEventListener('keydown', handleSaveShortcut, { capture: true });
+  console.log("Save shortcut listener is now active.");
+}
+
+// This is the key part to prevent the race condition.
+// It checks if the DOM is already loaded. If so, it runs the setup immediately.
+// If not, it waits for the DOMContentLoaded event.
+if (document.readyState === 'loading') {
+  // The document is still loading, so we wait for the event.
+  document.addEventListener('DOMContentLoaded', setupSaveShortcut);
+} else {
+  // The 'DOMContentLoaded' event has already fired.
+  // We can directly call the setup function.
+  setupSaveShortcut();
 }
