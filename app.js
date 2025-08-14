@@ -1,4 +1,4 @@
-const appVersion = '1.3.3';
+const appVersion = '1.3.4';
 document.getElementById('version').textContent = appVersion;
 
 let currentFileHandle = null;
@@ -21,6 +21,8 @@ function addOrUpdateDraft(id, name, content) {
   const size = content.length;
   const preview = content
     .replace(/[#*_>`~]/g, '') // Strip markdown symbols
+    .replace(/<\/?("[^"]*"|'[^']*'|[^>])*(>|$)/g, "")
+    .replace(/\n/g, '')
     .substring(0, 50)
     .trim() + (content.length > 50 ? '...' : '');
 
@@ -99,7 +101,7 @@ const checkIcon = `
 `;
 
 const closeIcon = `
-<svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="disabled-icon">
 <path d="M18 6L6 18M6 6L18 18" stroke="var(--bg-color)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M18 6L6 18M6 6L18 18" stroke="#ff175e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
@@ -115,13 +117,13 @@ const loadingIcon = `
 function changeSaveIconBtnIcon(status = "loading") {
   if (status == 'loading') {
     SaveIconBtnIcon.innerHTML = loadingIcon;
-    SaveIconBtn.setAttribute('data-tip', 'Auto Save is Enable');
+    SaveIconBtn.setAttribute('data-tooltip', 'Auto Save is Enable');
   } else if (status == 'saved') {
     SaveIconBtnIcon.innerHTML = checkIcon;
-    SaveIconBtn.setAttribute('data-tip', 'Auto Save is Enable');
+    SaveIconBtn.setAttribute('data-tooltip', 'Auto Save is Enable');
   } else {
     SaveIconBtnIcon.innerHTML = closeIcon;
-    SaveIconBtn.setAttribute('data-tip', 'Auto Save is Disable');
+    SaveIconBtn.setAttribute('data-tooltip', 'Auto Save is Disable');
   }
 }
 
@@ -213,7 +215,7 @@ const detectAndSetLanguage = debounce(() => {
 
 const autoSaveOnChangeFunc = debounce(() => {
   autoSaveFunc();
-}, 3000); // Wait 3 second after user stops typing
+}, 2000); // Wait 3 second after user stops typing
 
 
 // Alert timeout
@@ -274,18 +276,30 @@ const editor = new Editor({
     //     document.body.classList.remove('editor-focused');
     //     console.log('Editor blurred');
     //   }
-    }
+    },
+    // customHTMLRenderer: {
+    //   htmlBlock: {
+    //     pagebreak(node) {
+    //       return [
+    //         { type: 'openTag', tagName: 'span', outerNewLine: true, attributes: {'data-test': 'data-page-break'} },
+    //         { type: 'html', content: "===" },
+    //         { type: 'closeTag', tagName: 'span', outerNewLine: true },
+    //       ];
+    //     },
+    //   }
+    // },
 });
 
-editor.addCommand("markdown", "test", function additem() {
-  console.log("ButtonClicked");
-  editor.replaceSelection(" \n\n ~~-~~ ~~-~~ ~~-~~ \n\n ");
+editor.addCommand("markdown", "pageBreak", function additem() {
+  // editor.replaceSelection("\n\n~~-~~ ~~-~~ ~~-~~\n\n");
+  // editor.insertText("\n~~-~~ ~~-~~ ~~-~~\n");
+  editor.insertText(" \n \n <span data-page-break='break'>=======================</span> \n \n ");
 });
 
 editor.insertToolbarItem({ groupIndex: 5, itemIndex: 0 }, {
   name: 'myItem',
   tooltip: 'Page Break',
-  command: 'test',
+  command: 'pageBreak',
   text: '',
   className: 'toastui-editor-toolbar-icons page-break-command',
   // style: { backgroundImage: 'none' }
@@ -323,17 +337,21 @@ let openedFileName = '';
 
 toggleAutosave.addEventListener('change', (e) => {
   if (e.target.checked) {
-    showAlert('Autosave is enabled. Your changes will be saved automatically every 10 seconds.');
+    showAlert('Autosave enabled.');
     autoSaveFunc();
   } else {
-    showAlert('Autosave is disabled.');
-    changeSaveIconBtnIcon('disable');
+    if(confirm("Are you sure you want to disable autosave? We recommend keeping it enabled so that your work stays safe by saving regularly.")){
+      showAlert('Autosave disabled. We recommend to keep autosave enable.');
+      changeSaveIconBtnIcon('disable');
+    } else {
+      e.target.checked = true;
+    }
   }
 });
 
-SaveIconBtn.addEventListener('click', (e) => {
-  toggleAutosave.click();
-});
+// SaveIconBtn.addEventListener('click', (e) => {
+//   toggleAutosave.click();
+// });
 
 function updateDirection() {
   document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
@@ -647,7 +665,8 @@ document.getElementById('exportHtml').addEventListener('click', async () => {
       Rule for the FIRST <del> in a sequence of three.
       This is the one we will apply the special styles to.
     */
-    del:has(+ del + del) {
+    del:has(+ del + del),
+    span[data-page-break] {
       /* This makes the element a block, which is required for page-break-after to work reliably. */
       display: block;
       /* The important rule for printing */
@@ -659,10 +678,6 @@ document.getElementById('exportHtml').addEventListener('click', async () => {
       padding: 0;
       border: none;
     }
-    /* 
-      Rule for the SECOND and THIRD <del> tags in the sequence.
-      We simply hide them completely.
-    */
     del:has(+ del + del) + del,
     del:has(+ del + del) + del + del {
       display: none;
@@ -749,7 +764,8 @@ right: 0;
       Rule for the FIRST <del> in a sequence of three.
       This is the one we will apply the special styles to.
     */
-    del:has(+ del + del) {
+    del:has(+ del + del),
+    span[data-page-break] {
       /* This makes the element a block, which is required for page-break-after to work reliably. */
       display: block;
       /* The important rule for printing */

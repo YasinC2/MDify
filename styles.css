@@ -162,6 +162,15 @@ input {
     gap: 0.5rem;
 }
 
+.autosave-icon {
+    padding: 8px;
+    line-height: 0;
+    display: flex;
+    position: relative;
+    color: var(--text-color);
+    /* pointer-events: none; */
+}
+
 .center-title {
     font-size: 1.25rem;
     font-weight: bold;
@@ -511,6 +520,24 @@ button:not(.toastui-editor-toolbar-icons):hover {
     }
 }
 
+/* #autoSaveIconBtn .status .disabled-icon {
+    animation: blink-infinite 2s ease-in-out infinite;
+}
+
+@keyframes blink-infinite {
+    20% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    80% {
+        opacity: 1;
+    }
+} */
+
 .btn-icon-text,
 #aiAssistantBtn {
     display: flex;
@@ -572,7 +599,8 @@ button:not(.toastui-editor-toolbar-icons):hover {
 
 /* ///////////////////////////////////  Start Page Break CSS  /////////////////////////////////// */
 
-del:has(+ del + del) {
+del:has(+ del + del),
+span[data-page-break] {
     display: block;
     page-break-after: always;
     height: 1px;
@@ -584,7 +612,8 @@ del:has(+ del + del) {
     color: var(--bg-color) !important;
 }
 
-del:has(+ del + del):before {
+del:has(+ del + del):before,
+span[data-page-break]:before {
     content: '.';
     display: inline-block;
     position: absolute;
@@ -597,7 +626,8 @@ del:has(+ del + del):before {
     color: var(--bg-color);
 }
 
-del:has(+ del + del):after {
+del:has(+ del + del):after,
+span[data-page-break]:after {
     content: 'Page Break';
     display: block;
     width: 100%;
