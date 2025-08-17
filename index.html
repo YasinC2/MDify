@@ -86,12 +86,7 @@
                             <input type="checkbox" id="disableSpellCheck"> <span>Disable Spell Check</span>
                         </label>
                         <hr>
-                        <a href="https://github.com/YasinC2/MDify/" target="_blank" class="dropdown-item">
-                            <span>MDify GitHub</span>
-                        </a>
-                        <a href="https://github.com/YasinC2/MDify/issues" target="_blank" class="dropdown-item">
-                            <span>Report Issue</span>
-                        </a>
+                        <button id="aboutMDify">About MDify</button>
                         <div class="update-install-container" id="updateInstallContainer" style="display: none;">
                             <hr>
                             <button id="updateApp" style="display: none;">
@@ -357,6 +352,56 @@
 
     <span class="popup-message" id="aiStatus">Test</span>
 
+    <div class="about-dialog" id="aboutDialog" style="display: none;">
+        <div class="dialog" open>
+            <div class="dialog-header">
+                <span class="close" id="closeAboutDialog">&times;</span>
+                <img src="img/MDify-192.png" alt="" class="dialog-logo" width="100">
+                <h3>MDify</h3>
+                <small>Version: <span id="dialog-version"></span></small>
+            </div>
+            <div class="dialog-body">
+                <p>
+                    MDify is a modern, feature-rich Markdown tool designed to make writing simple, enjoyable, and powerful. Whether you’re creating notes, documentation, or long-form content, it combines the flexibility of Markdown with the comfort of a WYSIWYG interface and live preview, so you always know how your content will look.
+                </p>
+                <p>
+                    The app is installable as a PWA, works fully offline, and even lets you set it as your default Markdown editor for `.md` files. All your files and data stay on your device—nothing is ever uploaded to external servers—so you get both convenience and privacy.
+                </p>
+                <b>Features at a Glance</b>
+                <ul>
+                    <li>Feature-rich Markdown editor</li>
+                    <li>Live preview and WYSIWYG mode</li>
+                    <li>AI assistant</li>
+                    <li>Dark theme and RTL support</li>
+                    <li>Auto saving</li>
+                    <li>Export to HTML</li>
+                    <li>Automatic spell check (based on first line language)</li>
+                    <li>Save drafts to browser storage</li>
+                    <li>Save Markdown directly to your system</li>
+                    <li>Installable PWA, works offline</li>
+                    <li>Can be set as default `.md` editor</li>
+                    <li>Responsive design (desktop & mobile)</li>
+                    <li>Full security (no data sent to servers)</li>
+                    <li>Syntax highlighting for code</li>
+                    <li>Built-in chart & UML diagram plugins</li>
+                </ul>
+            </div>
+            <div class="dialog-footer">
+                <a href="https://github.com/YasinC2/MDify/" target="_blank" class="btn">
+                    <svg width="20" height="20" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg" fill="none"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16" d="M120.755 170c.03-4.669.059-20.874.059-27.29 0-9.272-3.167-15.339-6.719-18.41 22.051-2.464 45.201-10.863 45.201-49.067 0-10.855-3.824-19.735-10.175-26.683 1.017-2.516 4.413-12.63-.987-26.32 0 0-8.296-2.672-27.202 10.204-7.912-2.213-16.371-3.308-24.784-3.352-8.414.044-16.872 1.14-24.785 3.352C52.457 19.558 44.162 22.23 44.162 22.23c-5.4 13.69-2.004 23.804-.987 26.32C36.824 55.498 33 64.378 33 75.233c0 38.204 23.149 46.603 45.2 49.067-3.551 3.071-6.719 9.138-6.719 18.41 0 6.416.03 22.621.059 27.29M27 130c9.939.703 15.67 9.735 15.67 9.735 8.834 15.199 23.178 10.803 28.815 8.265"/></svg>
+                    <span>MDify GitHub</span>
+                </a>
+                <a href="https://github.com/YasinC2/MDify/issues" target="_blank" class="btn">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9.5 5.5L8 3M11 10H13M5 8H7.41797M19 8H16.582M5 16H7.41797M19 16H16.582M11 14H13M5 12H7M19 12H17M14.5 5.5L16 3M12 19C9.23858 19 7 16.7614 7 14V10C7 7.23858 9.23858 5 12 5C14.7614 5 17 7.23858 17 10V14C17 16.7614 14.7614 19 12 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>Report Issue</span>
+                </a>
+            </div>
+        </div>
+        <div class="dialog-overlay"></div>
+    </div>
+
     <script>
         const installAppBtn = document.getElementById('installApp');
         const updateAppBtn = document.getElementById('updateApp');
@@ -375,7 +420,7 @@
                     // Listen for new service worker installing
                     registration.addEventListener('updatefound', () => {
                         console.log("updatefound");
-                        
+
                         const newWorker = registration.installing;
                         if (newWorker) {
                             newWorker.addEventListener('statechange', () => {

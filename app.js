@@ -1,5 +1,6 @@
-const appVersion = '1.3.4';
+const appVersion = '1.3.5';
 document.getElementById('version').textContent = appVersion;
+document.getElementById('dialog-version').textContent = appVersion;
 
 let currentFileHandle = null;
 let skipAutosaveLoad = false;
@@ -347,6 +348,10 @@ toggleAutosave.addEventListener('change', (e) => {
       e.target.checked = true;
     }
   }
+});
+
+fileNameInput.addEventListener('change', (e) => {
+  autoSaveOnChangeFunc();
 });
 
 // SaveIconBtn.addEventListener('click', (e) => {
@@ -1094,6 +1099,22 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
+const aboutMDifyDialog = document.getElementById('aboutDialog');
+const closeAboutDialog = document.getElementById('closeAboutDialog');
+const aboutMDifyDialogOverlay = document.querySelector('.dialog-overlay');
+
+document.getElementById('aboutMDify').addEventListener('click', () => {
+  aboutMDifyDialog.style.display = 'block';
+});
+
+closeAboutDialog.addEventListener('click', () => {
+  aboutMDifyDialog.style.display = 'none';
+});
+
+aboutMDifyDialogOverlay.addEventListener('click', () => {
+  aboutMDifyDialog.style.display = 'none';
+});
+
 
 ///////////////////////////////////////////////////////
 /////////////////////////////////////////////////////// Start of AI Codes
@@ -1810,12 +1831,24 @@ exportZipBtn.addEventListener('click', async () => {
     if (!JSZip) {
       throw new Error('JSZip library not loaded');
     }
+
+    // Remove Markdown and filesystem-unsafe characters
+    const sanitize = str => {
+      return str
+        .replace(/^[-*+]\s+/, '')          // Remove list markers
+        .replace(/^#+\s*/, '')             // Remove Markdown headers
+        .replace(/[*_`>#]+/g, '')           // Remove Markdown symbols
+        .replace(/[<>:"/\\|?*]+/g, '-')     // Replace illegal filename chars
+        .replace(/[\u200B-\u200F\u202A-\u202E]/g, '') // Remove ZWSP & directional marks
+        .replace(/\s+/g, ' ')               // Normalize spaces
+        .trim();
+    };
     
     const collection = loadAutosaveCollection();
     const zip = new JSZip();
     
     collection.forEach(draft => {
-      zip.file(`${draft.name.replace(/[^a-z0-9]/gi, '_')}.md`, draft.content);
+      zip.file(`${sanitize(draft.name)}.md`, draft.content);
     });
     
     const content = await zip.generateAsync({ type: 'blob' });

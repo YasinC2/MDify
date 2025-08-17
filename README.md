@@ -1,6 +1,6 @@
 # MDify - Modern Markdown Editor with AI Assistant
 
-MDify is a feature-rich Markdown editor with built-in AI capabilities that runs in your browser. It provides real-time editing and preview capabilities with support for advanced formatting, charts, diagrams, RTL direction, dark mode, and AI-powered content generation.
+MDify is a powerful, privacy-friendly, and installable Markdown editor with modern features and built-in AI capabilities that runs in your browser. Designed for writers, developers, and creators who want speed, flexibility, and complete control of their content.
 
 ## Key Features
 
@@ -8,15 +8,16 @@ MDify is a feature-rich Markdown editor with built-in AI capabilities that runs 
 - **Real-time Markdown preview** - See formatted output as you type
 - **Advanced formatting** - Tables, code blocks, syntax highlighting
 - **Visual elements** - Charts and diagrams using ToastUI integration
-- **Custom themes** - Light and dark mode support
+- **Dark theme & RTL support** for better accessibility
 - **PWA support** - Install as a desktop/mobile app
-- **RTL direction** - Easily switch between right-to-left and left-to-right direction
 - **Persian font support** - Vazirmatn font family included
 - **Export capabilities** - Save documents in Markdown and HTML formats
 
+### 🚀 Getting Started
 
-## Usage
-You can access MDify [from here](https://yasinc2.github.io/MDify/).
+1. Open [the app](https://yasinc2.github.io/MDify/) in your browser.
+2. Optionally install it as a PWA for offline use.
+3. Start writing Markdown with live preview, auto-save, and export options.
 
 ## AI Assistant Features
 
