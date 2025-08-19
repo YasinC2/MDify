@@ -1,4 +1,4 @@
-const appVersion = '1.3.5';
+const appVersion = '1.3.6';
 document.getElementById('version').textContent = appVersion;
 document.getElementById('dialog-version').textContent = appVersion;
 

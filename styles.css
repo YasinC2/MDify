@@ -1167,7 +1167,7 @@ button.delete-draft:hover {
     position: fixed;
     top: 50%;
     width: 600px;
-    max-width: 90%;
+    max-width: 95%;
     left: auto;
     right: auto;
     background: var(--bg-color);
@@ -1177,6 +1177,18 @@ button.delete-draft:hover {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 210;
+    max-height: 97%;
+    overflow: auto;
+}
+
+.dialog::-webkit-scrollbar{
+    width: 4px;
+}
+
+.dialog::-webkit-scrollbar,
+.dialog::-webkit-scrollbar-thumb,
+.dialog::-webkit-scrollbar-track {
+    border-radius: 100px;
 }
 
 .dialog-overlay {
@@ -1194,9 +1206,10 @@ button.delete-draft:hover {
 .dialog .dialog-body,
 .dialog .dialog-footer {
     padding: 1.5rem;
+    position: relative;
 }
 
-.dialog  .dialog-body {
+.dialog .dialog-body {
     padding-top: 0;
     padding-bottom: 0;
 }
